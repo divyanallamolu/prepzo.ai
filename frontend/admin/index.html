@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prepzo Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="flex min-h-screen">
+  <div id="admin-overlay" class="admin-overlay" onclick="toggleAdminMenu(false)"></div>
+
+  <aside id="admin-sidebar" class="admin-sidebar w-64 border-r border-[var(--border)] p-6 fixed h-full flex flex-col z-[60]">
+    <a href="/admin/" class="brand-logo block mb-2">
+      <img src="/assets/logo.png" alt="Prepzo" class="h-10 w-auto max-w-[150px] object-contain" />
+    </a>
+    <p class="text-xs text-[var(--accent)] font-semibold mb-6 tracking-wide">ADMIN PANEL</p>
+    <nav class="space-y-1 flex-1">
+      <button data-tab="overview" class="sidebar-link active w-full text-left">Overview</button>
+      <button data-tab="companies" class="sidebar-link w-full text-left">Companies</button>
+      <button data-tab="questions" class="sidebar-link w-full text-left">Questions</button>
+      <button data-tab="bulk" class="sidebar-link w-full text-left">Bulk Upload</button>
+      <button data-tab="users" class="sidebar-link w-full text-left">Users</button>
+      <button data-tab="feedback" class="sidebar-link w-full text-left">Feedback</button>
+    </nav>
+    <button id="logout" class="sidebar-link text-red-400 w-full text-left">Logout</button>
+  </aside>
+
+  <div class="flex-1 md:ml-64 w-full min-w-0">
+    <header class="admin-mobile-header sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur px-4 h-14 items-center justify-between">
+      <button type="button" onclick="toggleAdminMenu(true)" class="p-2 text-[var(--text-muted)]" aria-label="Menu">?</button>
+      <img src="/assets/logo.png" alt="Prepzo" class="h-7 w-auto max-w-[120px] object-contain" />
+      <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+    </header>
+
+    <main class="p-4 sm:p-6">
+      <header class="hidden md:flex justify-between items-center mb-8">
+        <h2 id="page-title" class="text-2xl font-bold">Overview</h2>
+        <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+      </header>
+
+      <section id="tab-overview" class="tab-panel">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stats-cards"></div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="glass-card p-6"><canvas id="chart-difficulty" height="180"></canvas></div>
+          <div class="glass-card p-6"><canvas id="chart-category" height="180"></canvas></div>
+        </div>
+      </section>
+
+      <section id="tab-companies" class="tab-panel hidden">
+        <div class="flex flex-wrap gap-3 mb-4 justify-between">
+          <input id="search-companies" placeholder="Search companies..." class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm flex-1 min-w-[200px]">
+          <button onclick="openCompanyModal()" class="btn-primary text-sm whitespace-nowrap">+ Add Company</button>
+        </div>
+        <div id="companies-table" class="glass-card overflow-x-auto"></div>
+      </section>
+
+      <section id="tab-questions" class="tab-panel hidden">
+        <div class="flex flex-wrap gap-3 mb-4">
+          <input id="search-questions" placeholder="Search questions..." class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm flex-1 min-w-[180px]">
+          <select id="filter-company" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm">
+            <option value="">All Companies</option>
+          </select>
+          <select id="filter-difficulty" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm">
+            <option value="">All Difficulties</option>
+            <option>Easy</option><option>Medium</option><option>Hard</option>
+          </select>
+          <select id="filter-category" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm">
+            <option value="">All Categories</option>
+            <option>HR</option><option>Technical</option><option>Behavioral</option>
+          </select>
+          <button onclick="openQuestionModal()" class="btn-primary text-sm whitespace-nowrap">+ Add Question</button>
+        </div>
+        <p id="questions-count" class="text-xs text-[var(--text-muted)] mb-2"></p>
+        <div id="questions-table" class="glass-card overflow-x-auto"></div>
+      </section>
+
+      <section id="tab-bulk" class="tab-panel hidden">
+        <div class="glass-card p-6 max-w-3xl">
+          <h3 class="text-lg font-semibold mb-2">Bulk Upload Questions</h3>
+          <p class="text-sm text-[var(--text-muted)] mb-6">Upload 20+ questions at once via CSV or JSON. Companies must exist before importing.</p>
+
+          <div class="mb-4 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-sm font-mono text-[var(--text-muted)]">
+            CSV columns: <span class="text-[var(--accent)]">company_name, difficulty, category, question, answer, explanation</span>
+          </div>
+
+          <div class="flex flex-wrap gap-3 mb-4">
+            <button type="button" onclick="downloadBulkTemplate()" class="btn-ghost text-sm">Download CSV Template</button>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm text-[var(--text-muted)] block mb-2">Upload CSV or JSON file</label>
+              <input type="file" id="bulk-file" accept=".csv,.json" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:text-white">
+            </div>
+            <div class="upload-progress hidden" id="upload-progress-wrap">
+              <div class="upload-progress-bar" id="upload-progress-bar"></div>
+            </div>
+            <button type="button" id="bulk-upload-btn" onclick="runBulkUpload()" class="btn-primary w-full sm:w-auto">Upload Questions</button>
+          </div>
+
+          <div id="bulk-result" class="mt-6 hidden text-sm"></div>
+        </div>
+      </section>
+
+      <section id="tab-users" class="tab-panel hidden">
+        <div id="users-table" class="glass-card overflow-x-auto"></div>
+      </section>
+
+      <section id="tab-feedback" class="tab-panel hidden">
+        <div id="feedback-list" class="space-y-4"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Company Modal -->
+  <div id="company-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4">
+    <div class="glass-card p-6 w-full max-w-md">
+      <h3 class="font-semibold mb-4" id="company-modal-title">Add Company</h3>
+      <form id="company-form" class="space-y-3">
+        <input type="hidden" id="company-id">
+        <input type="text" id="company-name" required placeholder="Company name" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+        <textarea id="company-desc" placeholder="Description" rows="3" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="company-trending"> Trending company</label>
+        <div>
+          <label class="text-sm text-[var(--text-muted)]">Company logo</label>
+          <input type="file" id="company-logo" accept="image/*" class="text-sm w-full mt-1">
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="submit" class="btn-primary flex-1">Save</button>
+          <button type="button" onclick="closeModal('company-modal')" class="btn-ghost flex-1">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Question Modal -->
+  <div id="question-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4 overflow-y-auto">
+    <div class="glass-card p-6 w-full max-w-2xl my-8">
+      <h3 class="font-semibold mb-4" id="question-modal-title">Add Question</h3>
+      <form id="question-form" class="space-y-3">
+        <select id="q-company" required class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></select>
+        <textarea id="q-text" required placeholder="Interview question" rows="2" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
+        <textarea id="q-answer" required placeholder="Ideal answer" rows="3" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
+        <textarea id="q-explanation" placeholder="Explanation (optional � defaults to answer)" rows="2" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
+        <div class="grid sm:grid-cols-3 gap-3">
+          <select id="q-difficulty" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+            <option>Easy</option><option selected>Medium</option><option>Hard</option>
+          </select>
+          <select id="q-category" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+            <option>HR</option><option selected>Technical</option><option>Behavioral</option>
+          </select>
+          <input type="text" id="q-year" placeholder="Year asked" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+        </div>
+        <input type="text" id="q-tags" placeholder="Tags (comma separated)" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+        <input type="hidden" id="question-id">
+        <div class="flex gap-2 pt-2">
+          <button type="submit" class="btn-primary flex-1">Save Question</button>
+          <button type="button" onclick="closeModal('question-modal')" class="btn-ghost flex-1">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components.js"></script>
+  <script src="/admin/js/admin.js"></script>
+</body>
+</html>

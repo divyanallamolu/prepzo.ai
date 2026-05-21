@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prepzo - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="flex min-h-screen">
+  <aside class="hidden lg:flex flex-col w-64 border-r border-[var(--border)] p-6 fixed h-full">
+    <a href="/" class="brand-logo block mb-8">
+      <img src="/assets/logo.png" alt="Prepzo" class="h-9 w-auto max-w-[160px] object-contain" />
+    </a>
+    <nav class="space-y-1 flex-1">
+      <a href="/dashboard.html" class="sidebar-link active">Dashboard</a>
+      <a href="#" id="nav-practice" class="sidebar-link">Practice</a>
+      <a href="/results.html" class="sidebar-link">Results</a>
+      <a href="#" id="nav-leaderboard" class="sidebar-link">Leaderboard</a>
+    </nav>
+    <button id="logout-btn" class="sidebar-link text-red-400">Logout</button>
+  </aside>
+  <main class="flex-1 lg:ml-64 p-6 pt-20 lg:pt-6">
+    <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-bold">Welcome, <span id="user-name">User</span></h1>
+        <p class="text-[var(--text-muted)] text-sm">Ready to practice today?</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+        <input type="search" id="search" placeholder="Search companies..." class="px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow text-sm w-48 sm:w-64">
+      </div>
+    </header>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Practice Streak</p><p id="stat-streak" class="text-3xl font-bold text-[var(--accent)]">0</p><p class="text-xs text-[var(--text-muted)]">days</p></div>
+      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Questions Done</p><p id="stat-total" class="text-3xl font-bold">0</p></div>
+      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Bookmarks</p><p id="stat-bookmarks" class="text-3xl font-bold">0</p></div>
+      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Daily Challenge</p><button id="daily-btn" class="btn-primary text-sm mt-2 w-full">Start Challenge</button></div>
+    </div>
+
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Are you preparing for a specific company?</h2>
+      <div class="flex gap-3 mb-6">
+        <button id="btn-yes" class="btn-primary text-sm">Yes, choose company</button>
+        <button id="btn-trending" class="btn-ghost text-sm">Show trending</button>
+      </div>
+      <div id="companies-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+    </section>
+
+    <section id="leaderboard-section" class="hidden mb-8">
+      <h2 class="text-lg font-semibold mb-4">Leaderboard</h2>
+      <div id="leaderboard" class="glass-card p-6"></div>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-semibold mb-4">Recently Practiced</h2>
+      <div id="recent-list" class="text-sm text-[var(--text-muted)]">No practice sessions yet.</div>
+    </section>
+  </main>
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = Api.getUser();
+    document.getElementById('user-name').textContent = user?.name || 'User';
+
+    document.getElementById('logout-btn').onclick = () => {
+      Api.setToken(null); Api.setUser(null);
+      location.href = '/';
+    };
+
+    let allCompanies = [];
+
+    async function loadStats() {
+      try {
+        const stats = await Api.progress.stats();
+        document.getElementById('stat-streak').textContent = stats.streak || 0;
+        document.getElementById('stat-total').textContent = stats.total_practiced || 0;
+        if (stats.recent_companies?.length) {
+          document.getElementById('recent-list').innerHTML = stats.recent_companies.map(c =>
+            `<span class="inline-block px-3 py-1 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] mr-2 mb-2">${c}</span>`
+          ).join('');
+        }
+      } catch {}
+      try {
+        const bm = await Api.progress.bookmarks();
+        document.getElementById('stat-bookmarks').textContent = bm.length;
+      } catch {}
+    }
+
+    function renderCompanies(list) {
+      document.getElementById('companies-grid').innerHTML = list.map(c =>
+        Components.companyCard(c, `location.href='/interview.html?company=${c.id}&name=${encodeURIComponent(c.name)}'`)
+      ).join('');
+    }
+
+    async function loadCompanies(trending = false) {
+      try {
+        allCompanies = await Api.companies.list(trending);
+        renderCompanies(allCompanies);
+      } catch {
+        document.getElementById('companies-grid').innerHTML = '<p class="text-[var(--text-muted)]">Start the backend server to load companies.</p>';
+      }
+    }
+
+    document.getElementById('btn-yes').onclick = () => loadCompanies(false);
+    document.getElementById('btn-trending').onclick = () => loadCompanies(true);
+    document.getElementById('search').oninput = (e) => {
+      const q = e.target.value.toLowerCase();
+      renderCompanies(allCompanies.filter(c => c.name.toLowerCase().includes(q)));
+    };
+
+    document.getElementById('daily-btn').onclick = async () => {
+      try {
+        const q = await Api.questions.daily();
+        location.href = `/interview.html?company=${q.company_id}&name=${encodeURIComponent(q.company_name)}&daily=${q.id}`;
+      } catch (ex) { Components.toast(ex.message, 'error'); }
+    };
+
+    document.getElementById('nav-leaderboard').onclick = async (e) => {
+      e.preventDefault();
+      const sec = document.getElementById('leaderboard-section');
+      sec.classList.toggle('hidden');
+      if (!sec.classList.contains('hidden')) {
+        try {
+          const lb = await Api.progress.leaderboard();
+          document.getElementById('leaderboard').innerHTML = lb.length ? lb.map((r,i) =>
+            `<div class="flex justify-between py-2 border-b border-[var(--border)]"><span>#${i+1} ${r.name}</span><span>${r.total} questions · ${r.avg_score}% avg</span></div>`
+          ).join('') : '<p>No data yet</p>';
+        } catch { document.getElementById('leaderboard').innerHTML = '<p>Leaderboard unavailable</p>'; }
+      }
+    };
+
+    loadCompanies(true);
+    loadStats();
+  </script>
+</body>
+</html>

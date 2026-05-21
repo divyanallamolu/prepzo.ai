@@ -1,0 +1,242 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prepzo - Interview Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="min-h-screen">
+  <nav class="border-b border-[var(--border)] px-6 py-4 flex justify-between items-center">
+    <a href="/dashboard.html" class="text-sm text-[var(--text-muted)] hover:text-[var(--accent)]">Back</a>
+    <h1 id="company-title" class="font-semibold">Interview Room</h1>
+    <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+  </nav>
+  <div class="max-w-6xl mx-auto p-6 grid lg:grid-cols-4 gap-6">
+    <aside class="lg:col-span-1 order-2 lg:order-1">
+      <div class="glass-card p-4 sticky top-6">
+        <p class="text-xs text-[var(--text-muted)] mb-2">Progress</p>
+        <div class="w-full bg-[var(--border)] rounded-full h-2 mb-4">
+          <div id="progress-bar" class="bg-[var(--accent)] h-2 rounded-full transition-all" style="width:0%"></div>
+        </div>
+        <p id="progress-text" class="text-sm">0 / 0</p>
+        <div id="question-list" class="mt-4 space-y-1 max-h-64 overflow-y-auto text-xs"></div>
+      </div>
+    </aside>
+    <main class="lg:col-span-3 order-1 lg:order-2">
+      <div class="glass-card p-8 mb-6">
+        <div class="flex flex-wrap gap-2 mb-4" id="badges"></div>
+        <p id="question-text" class="text-xl font-medium leading-relaxed mb-6">Loading...</p>
+
+        <div id="timer-section" class="flex flex-col items-center py-8">
+          <svg class="timer-ring w-32 h-32" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border)" stroke-width="4"/>
+            <circle id="timer-circle" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="4"
+              stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round"/>
+          </svg>
+          <p id="timer-display" class="text-4xl font-bold mt-4 text-[var(--accent)]">3:00</p>
+          <p class="text-sm text-[var(--text-muted)] mt-2">Think before the answer is revealed</p>
+        </div>
+
+        <div id="answer-section" class="hidden space-y-6">
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--accent)] mb-2">Your Answer (Voice)</h3>
+            <textarea id="user-answer" rows="4" class="w-full px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow" placeholder="Type or use voice input..."></textarea>
+            <button id="voice-btn" class="btn-ghost text-sm mt-2">Start Voice Input</button>
+          </div>
+          <div id="ideal-answer" class="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+            <h3 class="font-semibold text-green-400 mb-2">Ideal Answer</h3>
+            <p id="answer-text"></p>
+          </div>
+          <div id="explanation-block" class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+            <h3 class="font-semibold text-indigo-400 mb-2">Explanation</h3>
+            <p id="explanation-text"></p>
+          </div>
+          <div id="tips-block" class="hidden">
+            <h3 class="font-semibold mb-2">Interview Tips</h3>
+            <ul id="tips-list" class="list-disc list-inside text-sm text-[var(--text-muted)]"></ul>
+          </div>
+          <div id="keypoints-block" class="hidden">
+            <h3 class="font-semibold mb-2">Key Points</h3>
+            <ul id="keypoints-list" class="list-disc list-inside text-sm text-[var(--text-muted)]"></ul>
+          </div>
+          <p id="year-asked" class="text-sm text-[var(--text-muted)]"></p>
+          <button id="evaluate-btn" class="btn-primary">Evaluate My Answer</button>
+          <div id="eval-result" class="hidden glass-card p-4 mt-4"></div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mt-6">
+          <button id="prev-btn" class="btn-ghost text-sm" disabled>Previous</button>
+          <button id="bookmark-btn" class="btn-ghost text-sm">Bookmark</button>
+          <button id="next-btn" class="btn-primary text-sm ml-auto">Next Question</button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const params = new URLSearchParams(location.search);
+    const companyId = params.get('company');
+    const companyName = params.get('name') || 'Interview';
+    document.getElementById('company-title').textContent = companyName;
+
+    let questions = [], currentIndex = 0, timerInterval = null, timeLeft = 180, revealed = false;
+
+    const circumference = 2 * Math.PI * 45;
+
+    async function loadQuestions() {
+      try {
+        questions = await Api.questions.list({ company_id: companyId, preview: 'true' });
+        if (!questions.length) {
+          questions = await Api.questions.list({ company_id: companyId });
+        }
+        if (!questions.length) {
+          document.getElementById('question-text').textContent = 'No questions available for this company yet.';
+          return;
+        }
+        renderQuestionList();
+        showQuestion(0);
+      } catch (ex) {
+        document.getElementById('question-text').textContent = 'Failed to load questions. Is the server running?';
+      }
+    }
+
+    function renderQuestionList() {
+      document.getElementById('question-list').innerHTML = questions.map((q,i) =>
+        `<button onclick="showQuestion(${i})" class="block w-full text-left px-2 py-1 rounded hover:bg-[var(--accent)]/10 ${i===currentIndex?'text-[var(--accent)]':''}">Q${i+1}</button>`
+      ).join('');
+    }
+
+    window.showQuestion = function(idx) {
+      currentIndex = idx;
+      revealed = false;
+      timeLeft = 180;
+      clearInterval(timerInterval);
+      document.getElementById('answer-section').classList.add('hidden');
+      document.getElementById('timer-section').classList.remove('hidden');
+      document.getElementById('eval-result').classList.add('hidden');
+      document.getElementById('user-answer').value = '';
+
+      const q = questions[idx];
+      document.getElementById('question-text').textContent = q.question;
+      document.getElementById('badges').innerHTML =
+        Components.difficultyBadge(q.difficulty) + Components.categoryBadge(q.category);
+      document.getElementById('progress-bar').style.width = ((idx+1)/questions.length*100)+'%';
+      document.getElementById('progress-text').textContent = `${idx+1} / ${questions.length}`;
+      document.getElementById('prev-btn').disabled = idx === 0;
+      document.getElementById('next-btn').textContent = idx === questions.length-1 ? 'Finish' : 'Next Question';
+      renderQuestionList();
+      startTimer();
+    };
+
+    function startTimer() {
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          revealAnswer();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(timeLeft/60), s = timeLeft%60;
+      document.getElementById('timer-display').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+      const offset = circumference * (1 - timeLeft/180);
+      document.getElementById('timer-circle').style.strokeDashoffset = offset;
+    }
+
+    async function revealAnswer() {
+      if (revealed) return;
+      revealed = true;
+      document.getElementById('timer-section').classList.add('hidden');
+      document.getElementById('answer-section').classList.remove('hidden');
+
+      let q = questions[currentIndex];
+      if (!q.answer) {
+        q = await Api.questions.get(q.id);
+        questions[currentIndex] = q;
+      }
+      document.getElementById('answer-text').textContent = q.answer;
+      document.getElementById('explanation-text').textContent = q.explanation;
+      document.getElementById('year-asked').textContent = q.year_asked ? `Year Asked: ${q.year_asked}` : '';
+      if (q.tips?.length) {
+        document.getElementById('tips-block').classList.remove('hidden');
+        document.getElementById('tips-list').innerHTML = q.tips.map(t=>`<li>${t}</li>`).join('');
+      }
+      if (q.key_points?.length) {
+        document.getElementById('keypoints-block').classList.remove('hidden');
+        document.getElementById('keypoints-list').innerHTML = q.key_points.map(k=>`<li>${k}</li>`).join('');
+      }
+    }
+
+    document.getElementById('next-btn').onclick = () => {
+      if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
+      else location.href = '/results.html?company=' + companyId;
+    };
+    document.getElementById('prev-btn').onclick = () => { if (currentIndex > 0) showQuestion(currentIndex - 1); };
+
+    document.getElementById('bookmark-btn').onclick = async () => {
+      const q = questions[currentIndex];
+      try {
+        await Api.progress.bookmark({ question_id: q.id, company_name: companyName, question_text: q.question });
+        Components.toast('Bookmarked!');
+      } catch (ex) { Components.toast(ex.message, 'error'); }
+    };
+
+    document.getElementById('evaluate-btn').onclick = async () => {
+      const q = questions[currentIndex];
+      const userAns = document.getElementById('user-answer').value;
+      if (!userAns.trim()) { Components.toast('Enter or speak your answer first', 'error'); return; }
+      try {
+        const result = await Api.evaluate({
+          user_answer: userAns,
+          ideal_answer: q.answer,
+          question: q.question,
+        });
+        await Api.progress.save({
+          company_id: companyId,
+          company_name: companyName,
+          question_id: q.id,
+          score: result.overall_score,
+          category: q.category,
+          difficulty: q.difficulty,
+          user_answer: userAns,
+        });
+        document.getElementById('eval-result').classList.remove('hidden');
+        document.getElementById('eval-result').innerHTML = `
+          <p class="font-semibold text-[var(--accent)]">Score: ${result.overall_score}/100</p>
+          <p class="text-sm mt-2">Similarity: ${result.similarity_score}% | Communication: ${result.communication_score}%</p>
+          <ul class="mt-2 text-sm text-[var(--text-muted)]">${result.suggestions.map(s=>`<li>${s}</li>`).join('')}</ul>`;
+      } catch (ex) { Components.toast(ex.message, 'error'); }
+    };
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      document.getElementById('voice-btn').onclick = () => {
+        rec.onresult = (e) => {
+          let t = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+          document.getElementById('user-answer').value = t;
+        };
+        rec.start();
+        document.getElementById('voice-btn').textContent = 'Listening...';
+        rec.onend = () => { document.getElementById('voice-btn').textContent = 'Start Voice Input'; };
+      };
+    } else {
+      document.getElementById('voice-btn').style.display = 'none';
+    }
+
+    loadQuestions();
+  </script>
+</body>
+</html>

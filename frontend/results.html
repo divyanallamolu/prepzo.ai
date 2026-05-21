@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prepzo - Results</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="min-h-screen p-6">
+  <div class="max-w-5xl mx-auto">
+    <header class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-3xl font-bold">Results & Feedback</h1>
+        <p class="text-[var(--text-muted)]">Your performance analytics</p>
+      </div>
+      <div class="flex gap-3">
+        <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+        <a href="/dashboard.html" class="btn-ghost text-sm">Dashboard</a>
+      </div>
+    </header>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-8">
+      <div class="glass-card p-6 text-center">
+        <p class="text-xs text-[var(--text-muted)]">Total Practiced</p>
+        <p id="total-practiced" class="text-4xl font-bold text-[var(--accent)]">0</p>
+      </div>
+      <div class="glass-card p-6 text-center">
+        <p class="text-xs text-[var(--text-muted)]">Streak</p>
+        <p id="streak" class="text-4xl font-bold">0</p>
+      </div>
+      <div class="glass-card p-6 text-center">
+        <p class="text-xs text-[var(--text-muted)]">Weak Areas</p>
+        <p id="weak-areas" class="text-sm mt-2 text-[var(--text-muted)]">—</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="glass-card p-6">
+        <h2 class="font-semibold mb-4">Performance by Category</h2>
+        <canvas id="category-chart" height="200"></canvas>
+      </div>
+      <div class="glass-card p-6">
+        <h2 class="font-semibold mb-4">Score Trend</h2>
+        <canvas id="score-chart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="glass-card p-6 mb-8">
+      <h2 class="font-semibold mb-4">AI Improvement Suggestions</h2>
+      <ul id="suggestions" class="space-y-2 text-sm text-[var(--text-muted)]"></ul>
+    </div>
+
+    <div class="glass-card p-8">
+      <h2 class="font-semibold mb-4">Share Your Feedback</h2>
+      <form id="feedback-form" class="space-y-4">
+        <div>
+          <label class="text-sm text-[var(--text-muted)]">Rating</label>
+          <select id="rating" class="w-full mt-1 px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)]">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Good</option>
+            <option value="3">3 - Average</option>
+            <option value="2">2 - Needs work</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-[var(--text-muted)]">Type</label>
+          <select id="fb-type" class="w-full mt-1 px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)]">
+            <option value="feature">Feature Suggestion</option>
+            <option value="bug">Bug Report</option>
+            <option value="general">General Feedback</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-[var(--text-muted)]">Message</label>
+          <textarea id="message" rows="4" required class="w-full mt-1 px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow" placeholder="Tell us what you think..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Submit Feedback</button>
+      </form>
+    </div>
+  </div>
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+
+    async function loadResults() {
+      try {
+        const stats = await Api.progress.stats();
+        document.getElementById('total-practiced').textContent = stats.total_practiced || 0;
+        document.getElementById('streak').textContent = stats.streak || 0;
+
+        const cats = stats.by_category || [];
+        const weak = cats.filter(c => (c.avg_score || 0) < 60).map(c => c._id);
+        document.getElementById('weak-areas').textContent = weak.length ? weak.join(', ') : 'None detected yet';
+
+        const suggestions = [];
+        if (weak.includes('Technical')) suggestions.push('Focus on technical fundamentals and system design patterns.');
+        if (weak.includes('Behavioral')) suggestions.push('Practice STAR method for behavioral questions.');
+        if (weak.includes('HR')) suggestions.push('Research company culture and prepare thoughtful HR responses.');
+        if (!suggestions.length) suggestions.push('Keep practicing daily to maintain your streak and improve consistency.');
+        document.getElementById('suggestions').innerHTML = suggestions.map(s => `<li>${s}</li>`).join('');
+
+        new Chart(document.getElementById('category-chart'), {
+          type: 'doughnut',
+          data: {
+            labels: cats.map(c => c._id || 'Unknown'),
+            datasets: [{ data: cats.map(c => c.count), backgroundColor: ['#FF4500','#6366F1','#06B6D4'] }]
+          },
+          options: { plugins: { legend: { labels: { color: '#9CA3AF' } } } }
+        });
+
+        const progress = await Api.progress.list();
+        const scores = progress.slice(0, 10).reverse().map(p => p.score || 0);
+        new Chart(document.getElementById('score-chart'), {
+          type: 'line',
+          data: {
+            labels: scores.map((_,i) => `Q${i+1}`),
+            datasets: [{ label: 'Score', data: scores, borderColor: '#FF4500', tension: 0.3, fill: false }]
+          },
+          options: { scales: { y: { max: 100 }, x: { ticks: { color: '#9CA3AF' } }, y: { ticks: { color: '#9CA3AF' } } } }
+        });
+      } catch (ex) {
+        document.getElementById('suggestions').innerHTML = '<li>Connect to backend to view analytics.</li>';
+      }
+    }
+
+    document.getElementById('feedback-form').onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await Api.feedback.submit({
+          rating: +document.getElementById('rating').value,
+          type: document.getElementById('fb-type').value,
+          message: document.getElementById('message').value,
+        });
+        Components.toast('Thank you for your feedback!');
+        document.getElementById('feedback-form').reset();
+      } catch (ex) { Components.toast(ex.message, 'error'); }
+    };
+
+    loadResults();
+  </script>
+</body>
+</html>
