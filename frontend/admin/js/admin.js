@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Prepzo Admin Dashboard
  * Runs after DOM is ready. Uses demo data if API is unavailable.
  */
@@ -699,16 +699,16 @@ const AdminApp = {
       this.timerConfig = cfg;
       if (!this.companies.length) this.companies = cfg.companies || await Api.companies.list();
 
-      const d = cfg.defaults || {};
-      document.getElementById('def-thinking').value = d.thinking_seconds ?? 180;
-      document.getElementById('def-interview').value = d.interview_duration_seconds ?? 1200;
-      document.getElementById('def-reveal-delay').value = d.reveal_delay_seconds ?? 0;
-      document.getElementById('def-auto-reveal').checked = d.auto_reveal !== false;
+      document.getElementById('def-prep').value = cfg.prep_seconds ?? 45;
+      document.getElementById('def-quiz-max').value = cfg.quiz_max_seconds ?? 1800;
+      document.getElementById('def-auto-next').checked = cfg.auto_next_on_timeout !== false;
 
-      const bd = cfg.by_difficulty || {};
-      document.getElementById('diff-easy').value = bd.Easy?.thinking_seconds ?? 120;
-      document.getElementById('diff-medium').value = bd.Medium?.thinking_seconds ?? 240;
-      document.getElementById('diff-hard').value = bd.Hard?.thinking_seconds ?? 360;
+      const bd = cfg.answer_by_difficulty || cfg.by_difficulty || {};
+      const getAns = (d, key, fallback) =>
+        (typeof d === 'object' && d !== null ? d.answer_seconds ?? d[key] : d) ?? fallback;
+      document.getElementById('diff-easy').value = getAns(bd.Easy, 'Easy', 45);
+      document.getElementById('diff-medium').value = getAns(bd.Medium, 'Medium', 90);
+      document.getElementById('diff-hard').value = getAns(bd.Hard, 'Hard', 120);
 
       this.renderCompanyTimerRows(cfg.by_company || {}, cfg.companies || this.companies);
       document.getElementById('timer-save-status').textContent =
@@ -745,10 +745,9 @@ const AdminApp = {
           )
           .join('')}</select>
       </div>
-      <div><label class="label">Thinking (sec)</label><input type="number" class="input ct-thinking" min="30" value="${cfg.thinking_seconds ?? ''}"></div>
-      <div><label class="label">Session (sec)</label><input type="number" class="input ct-session" min="300" value="${cfg.interview_duration_seconds ?? ''}"></div>
-      <div><label class="label">Reveal delay</label><input type="number" class="input ct-delay" min="0" value="${cfg.reveal_delay_seconds ?? 0}"></div>
-      <div><label class="label">Auto reveal</label><input type="checkbox" class="ct-auto" ${cfg.auto_reveal !== false ? 'checked' : ''}></div>
+      <div><label class="label">Prep (sec)</label><input type="number" class="input ct-prep" min="30" value="${cfg.prep_seconds ?? ''}"></div>
+      <div><label class="label">Answer (sec)</label><input type="number" class="input ct-answer" min="15" value="${cfg.answer_seconds ?? ''}"></div>
+      <div><label class="label">Quiz max (sec)</label><input type="number" class="input ct-quiz" min="600" value="${cfg.quiz_max_seconds ?? ''}"></div>
       <button type="button" class="btn-ghost btn-sm" style="color:#f87171" onclick="AdminApp.removeCompanyTimerRow(this)">Remove</button>
     </div>`;
   },
@@ -763,7 +762,7 @@ const AdminApp = {
     }
     const first = companies[0];
     const row = document.createElement('div');
-    row.innerHTML = this.companyTimerRowHtml(first.id, { thinking_seconds: 180, auto_reveal: true }, companies);
+    row.innerHTML = this.companyTimerRowHtml(first.id, { prep_seconds: 45, answer_seconds: 90 }, companies);
     list.appendChild(row.firstElementChild);
     if (list.querySelector('.text-muted')) list.querySelector('.text-muted')?.remove();
   },
@@ -777,31 +776,26 @@ const AdminApp = {
     document.querySelectorAll('#company-timers-list [data-cid]').forEach((row) => {
       const cid = row.querySelector('.company-timer-select')?.value;
       if (!cid) return;
-      const thinking = parseInt(row.querySelector('.ct-thinking')?.value, 10);
-      const session = parseInt(row.querySelector('.ct-session')?.value, 10);
-      const delay = parseInt(row.querySelector('.ct-delay')?.value, 10);
-      const auto = row.querySelector('.ct-auto')?.checked;
+      const prep = parseInt(row.querySelector('.ct-prep')?.value, 10);
+      const answer = parseInt(row.querySelector('.ct-answer')?.value, 10);
+      const quiz = parseInt(row.querySelector('.ct-quiz')?.value, 10);
       byCompany[cid] = {};
-      if (!isNaN(thinking)) byCompany[cid].thinking_seconds = thinking;
-      if (!isNaN(session)) byCompany[cid].interview_duration_seconds = session;
-      if (!isNaN(delay)) byCompany[cid].reveal_delay_seconds = delay;
-      byCompany[cid].auto_reveal = auto;
+      if (!isNaN(prep)) byCompany[cid].prep_seconds = prep;
+      if (!isNaN(answer)) byCompany[cid].answer_seconds = answer;
+      if (!isNaN(quiz)) byCompany[cid].quiz_max_seconds = quiz;
     });
     return byCompany;
   },
 
   async saveTimerSettings() {
     const body = {
-      defaults: {
-        thinking_seconds: parseInt(document.getElementById('def-thinking').value, 10) || 180,
-        interview_duration_seconds: parseInt(document.getElementById('def-interview').value, 10) || 1200,
-        reveal_delay_seconds: parseInt(document.getElementById('def-reveal-delay').value, 10) || 0,
-        auto_reveal: document.getElementById('def-auto-reveal').checked,
-      },
+      prep_seconds: parseInt(document.getElementById('def-prep').value, 10) || 45,
+      quiz_max_seconds: parseInt(document.getElementById('def-quiz-max').value, 10) || 1800,
+      auto_next_on_timeout: document.getElementById('def-auto-next').checked,
       by_difficulty: {
-        Easy: { thinking_seconds: parseInt(document.getElementById('diff-easy').value, 10) || 120 },
-        Medium: { thinking_seconds: parseInt(document.getElementById('diff-medium').value, 10) || 240 },
-        Hard: { thinking_seconds: parseInt(document.getElementById('diff-hard').value, 10) || 360 },
+        Easy: { answer_seconds: parseInt(document.getElementById('diff-easy').value, 10) || 45 },
+        Medium: { answer_seconds: parseInt(document.getElementById('diff-medium').value, 10) || 90 },
+        Hard: { answer_seconds: parseInt(document.getElementById('diff-hard').value, 10) || 120 },
       },
       by_company: this.collectCompanyTimers(),
     };

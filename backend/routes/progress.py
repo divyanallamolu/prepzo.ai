@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timezone
+from datetime import datetime, timezone
 
 from bson import ObjectId
 from flask import Blueprint, g, jsonify, request

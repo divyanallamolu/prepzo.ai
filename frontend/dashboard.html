@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -29,7 +29,7 @@
   <main class="main-content" style="position:relative;z-index:1">
     <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
       <div>
-        <h1 class="text-2xl font-bold">Welcome, <span id="user-name">User</span></h1>
+        <h1 class="page-heading">Welcome, <span id="user-name">User</span></h1>
         <p class="text-sm text-muted">Ready to practice today?</p>
       </div>
       <div class="flex items-center gap-3 hide-mobile">
@@ -59,7 +59,18 @@
     </div>
 
     <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-4">Choose a company to practice</h2>
+      <h2 class="section-title mb-4">Interview modes</h2>
+      <div class="glass-card card-pad mixed-mode-card mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold">Mixed Companies Mode</h3>
+            <p class="text-sm text-muted">Random questions from all companies — great for broad practice.</p>
+          </div>
+          <a href="/interview.html?mode=mixed" class="btn-primary">Start Mixed Interview</a>
+        </div>
+      </div>
+      <h2 class="section-title mb-4">Choose a company</h2>
+      <p class="text-sm text-muted mb-4">Amazon Prep shows only Amazon questions, Google only Google, and so on.</p>
       <div class="flex flex-wrap gap-3 mb-6">
         <button id="btn-yes" class="btn-primary btn-sm">All Companies</button>
         <button id="btn-trending" class="btn-ghost btn-sm">Trending Only</button>

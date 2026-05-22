@@ -114,43 +114,39 @@
       <!-- Users -->
       <section id="tab-timers" class="tab-panel">
         <div class="glass-card card-pad mb-6">
-          <h3 class="text-lg font-semibold mb-2">Default Timer Settings</h3>
-          <p class="text-sm text-muted mb-6">Applied when no company or difficulty override exists.</p>
+          <h3 class="text-lg font-semibold mb-2">Quiz &amp; Prep Defaults</h3>
+          <p class="text-sm text-muted mb-6">Prep time is mandatory before typing. Answer timers apply per difficulty unless user chooses untimed practice.</p>
           <form id="timer-defaults-form" class="grid grid-2 gap-4">
             <div>
-              <label class="label">Thinking time (seconds)</label>
-              <input type="number" id="def-thinking" class="input" min="30" max="3600" value="180">
-              <p class="text-xs text-muted mt-1">e.g. 180 = 3 minutes before answer shows</p>
+              <label class="label">Prep time (seconds)</label>
+              <input type="number" id="def-prep" class="input" min="30" max="300" value="45">
+              <p class="text-xs text-muted mt-1">Default: 45s mandatory preparation</p>
             </div>
             <div>
-              <label class="label">Interview duration (seconds)</label>
-              <input type="number" id="def-interview" class="input" min="300" max="7200" value="1200">
-              <p class="text-xs text-muted mt-1">e.g. 1200 = 20 minute session</p>
-            </div>
-            <div>
-              <label class="label">Reveal delay (seconds)</label>
-              <input type="number" id="def-reveal-delay" class="input" min="0" max="120" value="0">
+              <label class="label">Max quiz duration (seconds)</label>
+              <input type="number" id="def-quiz-max" class="input" min="600" max="7200" value="1800">
+              <p class="text-xs text-muted mt-1">Default: 1800 = 30 minutes</p>
             </div>
             <div>
               <label class="label flex items-center gap-2" style="margin-top:1.5rem">
-                <input type="checkbox" id="def-auto-reveal" checked> Auto-reveal answer when thinking time ends
+                <input type="checkbox" id="def-auto-next" checked> Auto-advance when answer timer ends
               </label>
             </div>
           </form>
         </div>
 
         <div class="glass-card card-pad mb-6">
-          <h3 class="text-lg font-semibold mb-4">Per Difficulty (thinking time)</h3>
+          <h3 class="text-lg font-semibold mb-4">Answer time by difficulty (seconds)</h3>
           <div class="grid grid-3 gap-4">
-            <div><label class="label">Easy (sec)</label><input type="number" id="diff-easy" class="input" min="30" value="120"></div>
-            <div><label class="label">Medium (sec)</label><input type="number" id="diff-medium" class="input" min="30" value="240"></div>
-            <div><label class="label">Hard (sec)</label><input type="number" id="diff-hard" class="input" min="30" value="360"></div>
+            <div><label class="label">Easy</label><input type="number" id="diff-easy" class="input" min="15" value="45"></div>
+            <div><label class="label">Medium</label><input type="number" id="diff-medium" class="input" min="15" value="90"></div>
+            <div><label class="label">Hard</label><input type="number" id="diff-hard" class="input" min="15" value="120"></div>
           </div>
         </div>
 
         <div class="glass-card card-pad mb-6">
           <h3 class="text-lg font-semibold mb-4">Per Company Overrides</h3>
-          <p class="text-sm text-muted mb-4">Example: Google 120s, Amazon 180s thinking time.</p>
+          <p class="text-sm text-muted mb-4">Optional prep / answer / quiz limits per company.</p>
           <div id="company-timers-list" class="admin-loading">Loading...</div>
           <button type="button" class="btn-ghost btn-sm mt-4" onclick="AdminApp.addCompanyTimerRow()">+ Add company override</button>
         </div>

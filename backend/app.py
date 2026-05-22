@@ -1,7 +1,7 @@
 import os
 import sys
 
-from flask import Flask, Response, abort, jsonify, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from config import Config
@@ -38,7 +38,26 @@ def create_app():
     app.config.from_object(Config)
     app.config["JSON_AS_ASCII"] = False
 
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": "*"}},
+        supports_credentials=False,
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    )
+
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS" and request.path.startswith("/api"):
+            return Response(status=204)
+
+    @app.after_request
+    def add_cors_headers(response):
+        if request.path.startswith("/api"):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+        return response
 
     init_db(app.config["MONGO_URI"])
     mode = get_db_mode()

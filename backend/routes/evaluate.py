@@ -1,4 +1,4 @@
-﻿"""
+"""
 POST /api/evaluate — AI answer scoring (calls ml/evaluator.py)
 
 Request JSON:
@@ -41,7 +41,10 @@ def evaluate_answer():
         result = {
             "similarity_score": 0,
             "communication_score": 0,
+            "grammar_score": 0,
+            "confidence_score": 0,
             "overall_score": 0,
+            "score_breakdown": {"content": 0, "communication": 0, "grammar": 0, "confidence": 0},
             "keywords_matched": [],
             "keywords_missing": [],
             "weak_areas": ["Evaluation unavailable"],

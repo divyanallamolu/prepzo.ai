@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Prepzo — reusable HTML components
  */
 const Components = {

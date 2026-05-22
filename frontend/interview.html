@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -6,85 +6,90 @@
   <title>Prepzo — Interview Room</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body class="min-h-screen page-enter">
-  <nav class="navbar" style="position:sticky">
-    <div class="navbar-inner" style="flex-direction:column;align-items:stretch;height:auto;padding:0.75rem 1.25rem">
-      <div class="flex items-center justify-between w-full">
-        <a href="/dashboard.html" class="text-sm text-muted">← Dashboard</a>
-        <h1 id="company-title" class="font-semibold text-lg">Interview Room</h1>
-        <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
-      </div>
-      <p id="session-timer-label" class="text-xs text-muted text-center mt-2">Session: --:--</p>
-      <div class="interview-session-bar mt-1">
+<body class="min-h-screen page-enter interview-page">
+  <nav class="navbar interview-nav">
+    <div class="navbar-inner interview-nav-inner">
+      <a href="/dashboard.html" class="text-sm text-muted">← Dashboard</a>
+      <h1 id="company-title" class="page-heading-sm">Interview Room</h1>
+      <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+      <p id="session-timer-label" class="text-xs text-muted text-center w-full">Quiz: --:--</p>
+      <div class="interview-session-bar">
         <div id="session-timer-fill" class="interview-session-bar-fill" style="width:100%"></div>
       </div>
     </div>
   </nav>
 
-  <div class="container" style="padding:2rem 1.25rem;max-width:1100px">
+  <div class="container interview-container">
     <div class="interview-grid">
-      <aside class="glass-card card-pad" style="height:fit-content;position:sticky;top:120px">
+      <aside class="glass-card card-pad interview-sidebar">
         <div class="interview-progress-header">
           <span>Progress</span>
           <span id="progress-text">0 / 0</span>
         </div>
         <div class="progress-bar mb-4"><div id="progress-bar" class="progress-bar-fill" style="width:0%"></div></div>
-        <p id="timer-hint" class="text-xs text-muted mb-3">Timer loads per difficulty & company</p>
-        <div id="question-list" style="max-height:240px;overflow-y:auto;font-size:0.8rem"></div>
+
+        <label class="practice-toggle">
+          <input type="checkbox" id="practice-no-timer">
+          <span>Practice without timer</span>
+        </label>
+        <p class="text-xs text-muted mb-4">Prep time (45s) is always required before you can type.</p>
+
+        <p id="timer-hint" class="text-xs text-muted mb-3"></p>
+        <div id="question-list" class="question-list-mini"></div>
       </aside>
 
-      <main>
-        <div class="glass-card card-pad mb-6">
+      <main class="interview-main">
+        <div class="glass-card card-pad">
           <div class="flex flex-wrap gap-2 mb-4" id="badges"></div>
-          <p id="question-text" class="text-xl font-medium leading-tight mb-6">Loading...</p>
+          <p id="phase-label" class="phase-label">Loading...</p>
+          <p id="phase-sublabel" class="text-sm text-muted mb-4"></p>
+          <p id="question-text" class="question-display">Loading...</p>
 
           <div id="timer-section">
             <div id="timer-ring-wrap" class="timer-ring-wrap">
-              <svg class="timer-ring-svg" viewBox="0 0 120 120">
+              <svg class="timer-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
                 <circle class="timer-track" cx="60" cy="60" r="54" fill="none" stroke-width="6"/>
                 <circle id="timer-circle" class="timer-progress" cx="60" cy="60" r="54" fill="none" stroke-width="6"
                   stroke-dasharray="339.292" stroke-dashoffset="0" stroke-linecap="round"/>
               </svg>
               <div class="timer-center-label">
-                <span id="timer-display" class="timer-display-main">3:00</span>
-                <span class="timer-display-sub">Thinking time</span>
+                <span id="timer-display" class="timer-display-main">0:45</span>
+                <span class="timer-display-sub">Prep time (required)</span>
               </div>
             </div>
-            <p class="timer-meta" id="timer-meta">Answer hidden until timer ends</p>
-            <div class="timer-controls">
-              <button type="button" id="timer-pause-btn" class="btn-ghost btn-sm">⏸ Pause</button>
-              <button type="button" id="timer-resume-btn" class="btn-ghost btn-sm hidden">▶ Resume</button>
-              <button type="button" id="timer-reset-btn" class="btn-ghost btn-sm">↺ Reset</button>
-              <button type="button" id="reveal-now-btn" class="btn-primary btn-sm hidden">Reveal Answer</button>
+            <div class="phase-progress-bar mt-4">
+              <div id="phase-progress-fill" class="phase-progress-fill"></div>
             </div>
           </div>
 
-          <div id="answer-section" class="hidden">
-            <div class="mb-6">
-              <h3 class="text-sm font-semibold text-accent mb-2">Your Answer</h3>
-              <textarea id="user-answer" rows="5" class="input" placeholder="Type or use voice input..."></textarea>
-              <button type="button" id="voice-btn" class="btn-ghost btn-sm mt-2">🎤 Start Voice Input</button>
-            </div>
-            <div class="mb-4 p-4 rounded-xl" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2)">
-              <h3 class="font-semibold mb-2" style="color:#22c55e">Ideal Answer</h3>
+          <div id="answer-input-section" class="hidden mt-6">
+            <h3 class="section-label">Your Answer</h3>
+            <textarea id="user-answer" rows="6" class="input" placeholder="Type your answer here (unlocked after prep)..." disabled></textarea>
+            <button type="button" id="voice-btn" class="btn-ghost btn-sm mt-2">🎤 Voice input</button>
+            <button type="button" id="submit-answer-btn" class="btn-primary mt-4 w-full">Submit Answer</button>
+          </div>
+
+          <div id="feedback-section" class="hidden mt-6">
+            <div class="ideal-answer-block mb-4">
+              <h3 class="section-label section-label-success">Ideal Answer</h3>
               <p id="answer-text" class="text-sm"></p>
             </div>
-            <div class="mb-4 p-4 rounded-xl" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2)">
-              <h3 class="font-semibold mb-2" style="color:#818cf8">Explanation</h3>
+            <div class="explanation-block mb-4">
+              <h3 class="section-label section-label-info">Explanation</h3>
               <p id="explanation-text" class="text-sm"></p>
             </div>
-            <div id="tips-block" class="hidden mb-4"><h3 class="font-semibold mb-2">Tips</h3><ul id="tips-list" class="text-sm text-muted"></ul></div>
-            <div id="keypoints-block" class="hidden mb-4"><h3 class="font-semibold mb-2">Key Points</h3><ul id="keypoints-list" class="text-sm text-muted"></ul></div>
+            <div id="tips-block" class="hidden mb-4"><h3 class="section-label">Tips</h3><ul id="tips-list" class="text-sm text-muted"></ul></div>
+            <div id="keypoints-block" class="hidden mb-4"><h3 class="section-label">Key Points</h3><ul id="keypoints-list" class="text-sm text-muted"></ul></div>
             <p id="year-asked" class="text-sm text-muted mb-2"></p>
             <p id="time-spent-label" class="text-xs text-muted mb-4"></p>
-            <button type="button" id="evaluate-btn" class="btn-primary">Evaluate My Answer with AI</button>
+            <button type="button" id="evaluate-btn" class="btn-primary w-full">Evaluate with AI</button>
             <div id="eval-result" class="hidden glass-card card-pad mt-4"></div>
           </div>
 
-          <div class="flex flex-wrap gap-3 mt-6">
+          <div class="interview-actions mt-6">
             <button type="button" id="prev-btn" class="btn-ghost btn-sm" disabled>Previous</button>
             <button type="button" id="bookmark-btn" class="btn-ghost btn-sm">Bookmark</button>
-            <button type="button" id="next-btn" class="btn-primary btn-sm" style="margin-left:auto">Next Question</button>
+            <button type="button" id="next-btn" class="btn-primary btn-sm">Next Question</button>
           </div>
         </div>
       </main>
@@ -99,70 +104,84 @@
     if (!requireAuth()) throw new Error('auth');
 
     const params = new URLSearchParams(location.search);
-    const companyId = params.get('company');
-    const companyName = params.get('name') || 'Interview';
+    const isMixed = params.get('mode') === 'mixed';
+    const companyId = params.get('company') || '';
+    const companyName = isMixed ? 'Mixed Companies' : (params.get('name') || 'Interview');
+    const dailyId = params.get('daily');
 
-    window.InterviewRoom = { companyId, companyName };
+    window.InterviewRoom = { companyId, companyName, isMixed };
 
     document.getElementById('company-title').textContent = companyName;
 
     let questions = [];
     let currentIndex = 0;
-    let revealedEarly = false;
+    let submitted = false;
 
     InterviewTimer.circumference = 2 * Math.PI * 54;
-    InterviewTimer.onReveal = () => revealAnswer();
-    InterviewTimer.onSessionEnd = () => {
-      Components.toast('Interview session time ended', 'error');
-      if (currentIndex < questions.length - 1) {
-        setTimeout(() => { location.href = '/results.html?company=' + companyId; }, 1500);
+    InterviewTimer.onPrepEnd = () => {
+      document.getElementById('user-answer').disabled = false;
+    };
+    InterviewTimer.onAnswerEnd = () => {
+      if (!submitted) {
+        Components.toast('Time is up — submitting...', 'error');
+        submitAnswer(true);
       }
     };
-
-    document.getElementById('timer-pause-btn').onclick = () => InterviewTimer.pause();
-    document.getElementById('timer-resume-btn').onclick = () => InterviewTimer.resume();
-    document.getElementById('timer-reset-btn').onclick = () => {
-      revealedEarly = false;
-      InterviewTimer.reset();
+    InterviewTimer.onQuizEnd = () => {
+      Components.toast('30-minute quiz limit reached', 'error');
+      finishInterview();
     };
-    document.getElementById('reveal-now-btn').onclick = () => {
-      revealedEarly = true;
-      InterviewTimer.triggerReveal();
+
+    document.getElementById('practice-no-timer').onchange = (e) => {
+      InterviewTimer.practiceWithoutTimer = e.target.checked;
     };
 
     async function loadQuestions() {
       try {
-        questions = await Api.questions.list({ company_id: companyId, preview: 'true' });
-        if (!questions.length) questions = await Api.questions.list({ company_id: companyId });
-        if (!questions.length) {
-          document.getElementById('question-text').textContent = 'No questions for this company yet.';
+        if (isMixed) {
+          questions = await Api.questions.mixed(25);
+        } else if (companyId) {
+          questions = await Api.questions.list({ company_id: companyId, preview: 'true' });
+          if (!questions.length) {
+            document.getElementById('question-text').textContent =
+              'No questions for this company. Try Mixed Mode from the dashboard.';
+            return;
+          }
+        } else {
+          document.getElementById('question-text').textContent = 'Select a company or Mixed Mode from the dashboard.';
           return;
         }
-        InterviewTimer.startSessionTimer();
+
+        if (dailyId) {
+          const idx = questions.findIndex((q) => q.id === dailyId);
+          if (idx >= 0) currentIndex = idx;
+        }
+
+        InterviewTimer.startQuizTimer();
         renderQuestionList();
-        showQuestion(0);
-      } catch {
-        document.getElementById('question-text').textContent = 'Failed to load questions. Is the server running?';
+        showQuestion(currentIndex);
+      } catch (ex) {
+        document.getElementById('question-text').textContent = 'Failed to load questions: ' + ex.message;
       }
     }
 
     function renderQuestionList() {
       document.getElementById('question-list').innerHTML = questions.map((q, i) =>
-        `<button type="button" onclick="showQuestion(${i})" style="display:block;width:100%;text-align:left;padding:0.35rem 0.5rem;border:none;background:${i === currentIndex ? 'var(--accent-soft)' : 'transparent'};color:${i === currentIndex ? 'var(--accent)' : 'inherit'};border-radius:6px;cursor:pointer;margin-bottom:2px">Q${i + 1} · ${q.difficulty}</button>`
+        `<button type="button" class="q-mini-btn${i === currentIndex ? ' active' : ''}" onclick="showQuestion(${i})">Q${i + 1} · ${q.difficulty}</button>`
       ).join('');
     }
 
     window.showQuestion = async function (idx) {
       currentIndex = idx;
-      revealedEarly = false;
-      InterviewTimer.revealed = false;
-
-      document.getElementById('answer-section').classList.add('hidden');
-      document.getElementById('timer-section').classList.remove('hidden');
+      submitted = false;
+      document.getElementById('user-answer').value = '';
+      document.getElementById('user-answer').disabled = true;
+      document.getElementById('feedback-section').classList.add('hidden');
       document.getElementById('eval-result').classList.add('hidden');
       document.getElementById('tips-block').classList.add('hidden');
       document.getElementById('keypoints-block').classList.add('hidden');
-      document.getElementById('user-answer').value = '';
+      document.getElementById('submit-answer-btn').disabled = false;
+      document.getElementById('submit-answer-btn').textContent = 'Submit Answer';
 
       const q = questions[idx];
       document.getElementById('question-text').textContent = q.question;
@@ -173,65 +192,102 @@
       document.getElementById('prev-btn').disabled = idx === 0;
       document.getElementById('next-btn').textContent =
         idx === questions.length - 1 ? 'Finish → Results' : 'Next Question';
+      document.getElementById('next-btn').disabled = true;
 
-      const meta = document.getElementById('timer-meta');
-      await InterviewTimer.startQuestionTimer(q.difficulty);
-      const s = InterviewTimer.settings;
-      meta.textContent = s.auto_reveal
-        ? `Auto-reveal after ${InterviewTimer.formatTime(s.thinking_seconds)} (+ ${s.reveal_delay_seconds || 0}s delay)`
-        : 'Manual reveal — click Reveal Answer when ready';
-
+      const diff = q.difficulty || 'Medium';
+      const ans = InterviewTimer.settings?.answer_by_difficulty?.[diff] ||
+        { Easy: 45, Medium: 90, Hard: 120 }[diff] || 90;
       document.getElementById('timer-hint').textContent =
-        `${q.difficulty}: ${s.thinking_seconds}s thinking · Session ${InterviewTimer.formatTime(s.interview_duration_seconds)}`;
+        `${diff}: prep 45s · answer ${ans}s · Quiz max 30 min`;
 
+      await InterviewTimer.startQuestion(isMixed ? '' : companyId, diff);
       renderQuestionList();
     };
 
-    async function revealAnswer() {
-      if (InterviewTimer.revealed && document.getElementById('answer-section').classList.contains('hidden') === false) return;
-      InterviewTimer.revealed = true;
+    function renderScoreBreakdown(result) {
+      const b = result.score_breakdown || {};
+      const rows = [
+        ['Content', b.content ?? result.similarity_score],
+        ['Communication', b.communication ?? result.communication_score],
+        ['Grammar', b.grammar ?? result.grammar_score],
+        ['Confidence', b.confidence ?? result.confidence_score],
+      ];
+      return rows.map(([label, val]) => `
+        <div class="score-bar-row">
+          <span class="score-bar-label">${label}</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:${Math.min(100, val || 0)}%"></div></div>
+          <span class="score-bar-pct">${val ?? 0}%</span>
+        </div>`).join('');
+    }
 
-      document.getElementById('timer-section').classList.add('hidden');
-      document.getElementById('answer-section').classList.remove('hidden');
+    async function submitAnswer(auto = false) {
+      if (InterviewTimer.phase === 'prep') {
+        Components.toast('Wait for prep time to finish', 'error');
+        return;
+      }
+      const userAns = document.getElementById('user-answer').value.trim();
+      if (!userAns && !auto) {
+        Components.toast('Enter your answer first', 'error');
+        return;
+      }
+
+      submitted = true;
+      InterviewTimer.stopAll();
+      document.getElementById('submit-answer-btn').disabled = true;
+      document.getElementById('submit-answer-btn').textContent = auto ? 'Auto-submitted' : 'Submitted';
 
       let q = questions[currentIndex];
-      if (!q.answer) {
+      try {
         q = await Api.questions.get(q.id);
         questions[currentIndex] = q;
+      } catch (ex) {
+        Components.toast('Could not load ideal answer: ' + ex.message, 'error');
+        return;
       }
-      document.getElementById('answer-text').textContent = q.answer;
-      document.getElementById('explanation-text').textContent = q.explanation;
+
+      document.getElementById('feedback-section').classList.remove('hidden');
+      document.getElementById('answer-text').textContent = q.answer || '—';
+      document.getElementById('explanation-text').textContent = q.explanation || '—';
       document.getElementById('year-asked').textContent = q.year_asked ? `Year asked: ${q.year_asked}` : '';
 
-      const spent = InterviewTimer.getTimeSpent();
-      const thinking = InterviewTimer.getThinkingUsed();
+      const t = InterviewTimer.getTimingStats();
       document.getElementById('time-spent-label').textContent =
-        `Time on question: ${InterviewTimer.formatTime(spent)} · Thinking timer used: ${InterviewTimer.formatTime(thinking)}${revealedEarly ? ' (revealed early)' : ''}`;
+        `Prep: ${InterviewTimer.formatTime(t.prep_seconds_used)} · Total: ${InterviewTimer.formatTime(t.time_spent_seconds)}` +
+        (t.practice_without_timer ? ' · Untimed practice' : ` · Answer: ${InterviewTimer.formatTime(t.answer_seconds_used)}`);
 
       if (q.tips?.length) {
         document.getElementById('tips-block').classList.remove('hidden');
-        document.getElementById('tips-list').innerHTML = q.tips.map(t => `<li>${t}</li>`).join('');
+        document.getElementById('tips-list').innerHTML = q.tips.map((t) => `<li>${t}</li>`).join('');
       }
       if (q.key_points?.length) {
         document.getElementById('keypoints-block').classList.remove('hidden');
-        document.getElementById('keypoints-list').innerHTML = q.key_points.map(k => `<li>${k}</li>`).join('');
+        document.getElementById('keypoints-list').innerHTML = q.key_points.map((k) => `<li>${k}</li>`).join('');
       }
+
+      document.getElementById('next-btn').disabled = false;
     }
+
+    document.getElementById('submit-answer-btn').onclick = () => submitAnswer(false);
 
     document.getElementById('next-btn').onclick = () => {
       if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
-      else location.href = '/results.html?company=' + companyId;
+      else finishInterview();
     };
     document.getElementById('prev-btn').onclick = () => {
       if (currentIndex > 0) showQuestion(currentIndex - 1);
     };
+
+    function finishInterview() {
+      const q = isMixed ? 'mode=mixed' : `company=${companyId}`;
+      location.href = '/results.html?' + q;
+    }
 
     document.getElementById('bookmark-btn').onclick = async () => {
       const q = questions[currentIndex];
       try {
         await Api.progress.bookmark({
           question_id: q.id,
-          company_name: companyName,
+          company_name: q.company_name || companyName,
           question_text: q.question,
         });
         Components.toast('Bookmarked!');
@@ -244,7 +300,7 @@
       const q = questions[currentIndex];
       const userAns = document.getElementById('user-answer').value;
       if (!userAns.trim()) {
-        Components.toast('Enter or speak your answer first', 'error');
+        Components.toast('Enter your answer first', 'error');
         return;
       }
       const btn = document.getElementById('evaluate-btn');
@@ -257,35 +313,36 @@
           question: q.question,
           category: q.category,
         });
+        const t = InterviewTimer.getTimingStats();
         await Api.progress.save({
-          company_id: companyId,
-          company_name: companyName,
+          company_id: companyId || q.company_id,
+          company_name: q.company_name || companyName,
           question_id: q.id,
           score: result.overall_score,
           category: q.category,
           difficulty: q.difficulty,
           user_answer: userAns,
-          thinking_seconds_used: InterviewTimer.getThinkingUsed(),
-          time_spent_seconds: InterviewTimer.getTimeSpent(),
-          revealed_early: revealedEarly,
+          thinking_seconds_used: t.prep_seconds_used,
+          time_spent_seconds: t.time_spent_seconds,
+          revealed_early: false,
         });
         const el = document.getElementById('eval-result');
         el.classList.remove('hidden');
         el.innerHTML = `
-          <div class="flex items-center gap-4 mb-4">
+          <div class="eval-header">
             <div class="score-ring">${result.overall_score}</div>
             <div>
               <p class="font-bold text-lg">Overall Score</p>
-              <p class="text-sm text-muted">Content: ${result.similarity_score}% · Communication: ${result.communication_score}%</p>
+              <p class="text-sm text-muted">${result.feedback || ''}</p>
             </div>
           </div>
-          <p class="text-sm mb-2">${result.feedback}</p>
-          <ul class="text-sm text-muted">${(result.suggestions || []).map(s => `<li style="margin:0.35rem 0">• ${s}</li>`).join('')}</ul>`;
+          <div class="score-breakdown mt-4">${renderScoreBreakdown(result)}</div>
+          <ul class="text-sm text-muted mt-4">${(result.suggestions || []).map((s) => `<li style="margin:0.35rem 0">• ${s}</li>`).join('')}</ul>`;
       } catch (ex) {
         Components.toast(ex.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Evaluate My Answer with AI';
+        btn.textContent = 'Evaluate with AI';
       }
     };
 
@@ -295,6 +352,10 @@
       rec.continuous = true;
       rec.interimResults = true;
       document.getElementById('voice-btn').onclick = () => {
+        if (InterviewTimer.phase === 'prep') {
+          Components.toast('Wait until prep ends', 'error');
+          return;
+        }
         rec.onresult = (e) => {
           let t = '';
           for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
@@ -303,7 +364,7 @@
         rec.start();
         document.getElementById('voice-btn').textContent = '🔴 Listening...';
         rec.onend = () => {
-          document.getElementById('voice-btn').textContent = '🎤 Start Voice Input';
+          document.getElementById('voice-btn').textContent = '🎤 Voice input';
         };
       };
     } else {

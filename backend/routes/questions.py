@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 
 from bson import ObjectId
@@ -55,6 +55,16 @@ def list_questions():
     include_answer = request.args.get("preview") != "true"
     questions = [_question(q, include_answer=include_answer) for q in db.questions.find(query)]
     return jsonify(questions)
+
+
+@questions_bp.route("/mixed", methods=["GET"])
+def mixed_questions():
+    """Random questions from all companies (no answers) — Mixed Companies mode."""
+    db = get_db()
+    limit = min(int(request.args.get("limit", 20)), 50)
+    pipeline = [{"$sample": {"size": limit}}]
+    result = list(db.questions.aggregate(pipeline))
+    return jsonify([_question(q, include_answer=False) for q in result])
 
 
 @questions_bp.route("/<question_id>", methods=["GET"])
