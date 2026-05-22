@@ -4,31 +4,13 @@ from bson import ObjectId
 from flask import Blueprint, g, jsonify, request
 
 from extensions import get_db
+from services.analytics_service import build_dashboard
+from services.streak_service import update_streak
 from utils.jwt_utils import token_required
 
 progress_bp = Blueprint("progress", __name__, url_prefix="/api/progress")
 
-
-def _update_streak(db, user_id: str):
-    user = db.users.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        return
-    today = datetime.now(timezone.utc).date().isoformat()
-    last = user.get("last_practice")
-    streak = user.get("streak", 0)
-    if last == today:
-        return
-    yesterday = (datetime.now(timezone.utc).date()).isoformat()
-    from datetime import timedelta
-    yest = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
-    if last == yest:
-        streak += 1
-    else:
-        streak = 1
-    db.users.update_one(
-        {"_id": ObjectId(user_id)},
-        {"$set": {"streak": streak, "last_practice": today}},
-    )
+PASS_THRESHOLD = 60
 
 
 @progress_bp.route("", methods=["POST"])
@@ -38,12 +20,14 @@ def save_progress():
     user_id = g.current_user["sub"]
     data = request.get_json() or {}
 
+    score = float(data.get("score", 0))
     doc = {
         "user_id": user_id,
         "company_id": data.get("company_id", ""),
         "company_name": data.get("company_name", ""),
         "question_id": data.get("question_id", ""),
-        "score": data.get("score", 0),
+        "score": score,
+        "is_correct": score >= PASS_THRESHOLD,
         "category": data.get("category", ""),
         "difficulty": data.get("difficulty", ""),
         "user_answer": data.get("user_answer", ""),
@@ -53,8 +37,12 @@ def save_progress():
         "completed_at": datetime.now(timezone.utc).isoformat(),
     }
     db.progress.insert_one(doc)
-    _update_streak(db, user_id)
-    return jsonify({"message": "Progress saved"}), 201
+    streak_info = update_streak(db, user_id)
+    db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$inc": {"xp": max(5, int(score // 10))}},
+    )
+    return jsonify({"message": "Progress saved", "streak": streak_info}), 201
 
 
 @progress_bp.route("", methods=["GET"])
@@ -112,11 +100,17 @@ def get_stats():
     for f in fastest:
         f["id"] = str(f.pop("_id", ""))
 
+    dash = build_dashboard(db, user_id)
     return jsonify({
         "total_practiced": total,
         "by_category": by_category,
         "recent_companies": recent_companies[:5],
         "streak": user.get("streak", 0) if user else 0,
+        "longest_streak": user.get("longest_streak", 0) if user else 0,
+        "accuracy": dash.get("accuracy", 0),
+        "motivation": dash.get("motivation", []),
+        "weekly_activity": dash.get("weekly_activity", []),
+        "xp": user.get("xp", 0) if user else 0,
         "timing": {
             "avg_time_spent_seconds": round(timing_stats.get("avg_time_spent", 0), 1),
             "min_time_spent_seconds": timing_stats.get("min_time_spent", 0),

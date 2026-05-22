@@ -10,82 +10,93 @@
   <div class="page-bg"><div class="gradient-orb gradient-orb-3"></div></div>
 
   <header class="mobile-header">
-    <button type="button" onclick="AppUI.toggleSidebar(true)" aria-label="Menu" class="btn-ghost btn-sm" style="border:none">☰</button>
+    <button type="button" onclick="AppUI.toggleSidebar(true)" class="btn-ghost btn-sm" style="border:none" aria-label="Menu">☰</button>
     <img src="/assets/logo.png" alt="Prepzo" style="height:32px">
     <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
   </header>
 
-  <aside class="sidebar" id="app-sidebar">
-    <a href="/" style="display:block;margin-bottom:2rem"><img src="/assets/logo.png" alt="Prepzo" style="height:40px;width:auto"></a>
-    <nav style="flex:1;display:flex;flex-direction:column;gap:0.25rem">
-      <a href="/dashboard.html" class="sidebar-link active">Dashboard</a>
-      <a href="/results.html" class="sidebar-link">Results</a>
-      <button type="button" id="nav-leaderboard" class="sidebar-link">Leaderboard</button>
-    </nav>
-    <button type="button" id="logout-btn" class="sidebar-link" style="color:#f87171">Logout</button>
-  </aside>
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="AppUI.toggleSidebar(false)"></div>
+  <div id="sidebar-mount"></div>
 
   <main class="main-content" style="position:relative;z-index:1">
-    <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
-      <div>
-        <h1 class="page-heading">Welcome, <span id="user-name">User</span></h1>
-        <p class="text-sm text-muted">Ready to practice today?</p>
-      </div>
-      <div class="flex items-center gap-3 hide-mobile">
-        <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
-        <input type="search" id="search" placeholder="Search companies..." class="input" style="width:220px">
-      </div>
+    <header class="mb-8">
+      <p class="text-sm text-accent font-semibold mb-2" style="letter-spacing:0.08em;text-transform:uppercase">Interview Command Center</p>
+      <h1 class="page-heading">Welcome back, <span id="user-name">User</span></h1>
+      <p class="page-subtitle mt-2">Train like a top candidate — company-specific mocks, AI scoring, and streak-driven consistency.</p>
     </header>
 
-    <div class="grid grid-4 gap-4 mb-8">
-      <div class="glass-card stat-card">
-        <p class="text-xs text-muted">Practice Streak</p>
-        <p class="stat-value" id="stat-streak">0</p>
-        <p class="text-xs text-muted">days</p>
+    <div id="motivation-banner" class="motivation-banner hidden"></div>
+
+    <div class="grid grid-4 gap-4 mb-8" id="stats-grid">
+      <div class="glass-card stat-card streak-card">
+        <p class="text-sm text-muted">Practice Streak</p>
+        <p class="stat-value"><span class="streak-fire">🔥</span> <span id="stat-streak">0</span></p>
+        <p class="text-xs text-muted">Longest: <span id="stat-longest">0</span> days</p>
       </div>
       <div class="glass-card stat-card">
-        <p class="text-xs text-muted">Questions Done</p>
-        <p class="stat-value" id="stat-total" style="color:var(--text-primary)">0</p>
+        <p class="text-sm text-muted">Questions Done</p>
+        <p class="stat-value" id="stat-total">0</p>
+        <p class="text-xs text-muted">Accuracy: <span id="stat-accuracy">—</span></p>
       </div>
       <div class="glass-card stat-card">
-        <p class="text-xs text-muted">Bookmarks</p>
-        <p class="stat-value" id="stat-bookmarks" style="color:var(--text-primary)">0</p>
+        <p class="text-sm text-muted">XP Earned</p>
+        <p class="stat-value" id="stat-xp" style="color:#a5b4fc">0</p>
+        <span class="xp-badge">Level up with practice</span>
       </div>
       <div class="glass-card stat-card">
-        <p class="text-xs text-muted">Daily Challenge</p>
+        <p class="text-sm text-muted">Daily Challenge</p>
         <button id="daily-btn" class="btn-primary btn-sm mt-2 w-full">Start Challenge</button>
       </div>
     </div>
 
+    <div class="glass-card card-pad mb-8">
+      <h3 class="section-title mb-2" style="font-size:1.1rem">Weekly consistency</h3>
+      <div id="weekly-chart" class="weekly-chart"></div>
+    </div>
+
     <section class="mb-8">
-      <h2 class="section-title mb-4">Interview modes</h2>
       <div class="glass-card card-pad mixed-mode-card mb-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h3 class="text-lg font-semibold">Mixed Companies Mode</h3>
-            <p class="text-sm text-muted">Random questions from all companies — great for broad practice.</p>
+            <h3 class="section-title" style="font-size:1.25rem">Mixed Companies Mode</h3>
+            <p class="text-sm text-muted">Random questions from all companies — broad interview readiness.</p>
           </div>
           <a href="/interview.html?mode=mixed" class="btn-primary">Start Mixed Interview</a>
         </div>
       </div>
-      <h2 class="section-title mb-4">Choose a company</h2>
-      <p class="text-sm text-muted mb-4">Amazon Prep shows only Amazon questions, Google only Google, and so on.</p>
-      <div class="flex flex-wrap gap-3 mb-6">
-        <button id="btn-yes" class="btn-primary btn-sm">All Companies</button>
-        <button id="btn-trending" class="btn-ghost btn-sm">Trending Only</button>
+
+      <div class="filter-bar">
+        <input type="search" id="search" placeholder="Search companies, tags..." class="input search-input-lg">
+        <select id="filter-difficulty" class="select">
+          <option value="">All difficulties</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+        <button id="btn-all" class="btn-primary btn-sm">All</button>
+        <button id="btn-trending" class="btn-ghost btn-sm">Trending</button>
       </div>
-      <div id="companies-grid" class="grid grid-4 gap-4"></div>
+
+      <h2 class="section-title mb-4">Choose your target company</h2>
+      <div id="companies-grid" class="grid-companies">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </section>
+
+    <section class="revision-section glass-card card-pad mb-8">
+      <h2 class="section-title mb-2">Need revision?</h2>
+      <p class="text-sm text-muted mb-4">Revisit weak spots, bookmarks, and frequently missed topics.</p>
+      <div class="revision-tabs">
+        <button type="button" class="revision-tab active" data-tab="wrong">Wrong answers</button>
+        <button type="button" class="revision-tab" data-tab="bookmarked">Bookmarked</button>
+        <button type="button" class="revision-tab" data-tab="missed">Frequently missed</button>
+        <button type="button" class="revision-tab" data-tab="recent">Recently practiced</button>
+      </div>
+      <div id="revision-list" class="revision-list text-sm text-muted">Loading revision data...</div>
     </section>
 
     <section id="leaderboard-section" class="hidden mb-8">
-      <h2 class="text-lg font-semibold mb-4">Leaderboard</h2>
+      <h2 class="section-title mb-4">Leaderboard</h2>
       <div id="leaderboard" class="glass-card card-pad"></div>
-    </section>
-
-    <section>
-      <h2 class="text-lg font-semibold mb-4">Recently Practiced</h2>
-      <div id="recent-list" class="text-sm text-muted">No practice sessions yet.</div>
     </section>
   </main>
 
@@ -95,49 +106,103 @@
   <script src="/js/app.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
+    document.getElementById('sidebar-mount').innerHTML = Components.appSidebar('dashboard');
     document.getElementById('user-name').textContent = Api.getUser()?.name || 'User';
     document.getElementById('logout-btn').onclick = () => { Api.setToken(null); Api.setUser(null); location.href = '/'; };
 
     let allCompanies = [];
+    let revisionData = null;
+    let activeRevisionTab = 'wrong';
 
-    async function loadStats() {
+    async function loadDashboard() {
       try {
         const stats = await Api.progress.stats();
         document.getElementById('stat-streak').textContent = stats.streak || 0;
+        document.getElementById('stat-longest').textContent = stats.longest_streak || 0;
         document.getElementById('stat-total').textContent = stats.total_practiced || 0;
-        if (stats.recent_companies?.length) {
-          document.getElementById('recent-list').innerHTML = stats.recent_companies.map(c =>
-            `<span style="display:inline-block;padding:0.35rem 0.85rem;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin:0.25rem 0.5rem 0.25rem 0">${c}</span>`
+        document.getElementById('stat-accuracy').textContent = (stats.accuracy != null ? stats.accuracy + '%' : '—');
+        document.getElementById('stat-xp').textContent = stats.xp || 0;
+        const banner = document.getElementById('motivation-banner');
+        if (stats.motivation?.length) {
+          banner.classList.remove('hidden');
+          banner.innerHTML = stats.motivation.map(m => `<p>${m}</p>`).join('');
+        }
+        if (stats.weekly_activity?.length) {
+          const max = Math.max(1, ...stats.weekly_activity.map(d => d.count));
+          document.getElementById('weekly-chart').innerHTML = stats.weekly_activity.map(d =>
+            `<div class="weekly-bar" style="height:${Math.max(8, (d.count / max) * 72)}px" title="${d.date}: ${d.count}"></div>`
           ).join('');
         }
-      } catch {}
-      try {
-        const bm = await Api.progress.bookmarks();
-        document.getElementById('stat-bookmarks').textContent = bm.length;
-      } catch {}
+      } catch (e) { console.warn('stats', e); }
     }
 
     function renderCompanies(list) {
-      document.getElementById('companies-grid').innerHTML = list.length
+      const grid = document.getElementById('companies-grid');
+      grid.innerHTML = list.length
         ? list.map(c => Components.companyCard(c, `location.href='/interview.html?company=${c.id}&name=${encodeURIComponent(c.name)}'`)).join('')
-        : '<p class="text-muted">No companies found.</p>';
+        : '<p class="text-muted">No companies found. Ensure MongoDB is seeded.</p>';
     }
 
-    async function loadCompanies(trending = false) {
+    async function loadCompanies(params = {}) {
+      document.getElementById('companies-grid').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
       try {
-        allCompanies = await Api.companies.list(trending);
+        allCompanies = await Api.companies.list(params);
         renderCompanies(allCompanies);
-      } catch {
-        document.getElementById('companies-grid').innerHTML = '<p class="text-muted">Start the backend server to load companies.</p>';
+      } catch (e) {
+        document.getElementById('companies-grid').innerHTML = '<p class="text-muted">Could not load companies. Check API connection.</p>';
       }
     }
 
-    document.getElementById('btn-yes').onclick = () => loadCompanies(false);
-    document.getElementById('btn-trending').onclick = () => loadCompanies(true);
-    document.getElementById('search')?.addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase();
-      renderCompanies(allCompanies.filter(c => c.name.toLowerCase().includes(q)));
+    function applyFilters() {
+      const q = document.getElementById('search').value.toLowerCase();
+      const diff = document.getElementById('filter-difficulty').value;
+      let list = allCompanies;
+      if (q) list = list.filter(c => (c.name + (c.tags || []).join('')).toLowerCase().includes(q));
+      if (diff) list = list.filter(c => c.difficulty === diff);
+      renderCompanies(list);
+    }
+
+    async function loadRevisions() {
+      try {
+        revisionData = await Api.revisions.list();
+        renderRevisionTab(activeRevisionTab);
+      } catch {
+        document.getElementById('revision-list').innerHTML = '<p>Sign in and practice to build your revision list.</p>';
+      }
+    }
+
+    function renderRevisionTab(tab) {
+      activeRevisionTab = tab;
+      document.querySelectorAll('.revision-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      if (!revisionData) return;
+      let items = [];
+      if (tab === 'wrong') items = revisionData.wrong_questions || [];
+      else if (tab === 'bookmarked') items = revisionData.bookmarked || [];
+      else if (tab === 'missed') items = revisionData.frequently_missed || [];
+      else items = revisionData.recently_practiced || [];
+
+      const el = document.getElementById('revision-list');
+      if (!items.length) {
+        el.innerHTML = '<p class="text-muted">Nothing here yet — keep practicing!</p>';
+        return;
+      }
+      el.innerHTML = items.slice(0, 12).map(it => `
+        <div class="revision-item">
+          <div>
+            <strong>${it.title || (it.question_text || '').slice(0, 60)}</strong>
+            <p class="text-xs text-muted">${it.company_name || ''} · ${it.category || ''} ${it.score != null ? '· ' + it.score + '%' : ''}</p>
+          </div>
+          ${it.question_id ? `<a href="/interview.html?company=${it.company_id || ''}" class="btn-ghost btn-sm">Retry</a>` : ''}
+        </div>`).join('');
+    }
+
+    document.querySelectorAll('.revision-tab').forEach(btn => {
+      btn.onclick = () => renderRevisionTab(btn.dataset.tab);
     });
+    document.getElementById('btn-all').onclick = () => loadCompanies({});
+    document.getElementById('btn-trending').onclick = () => loadCompanies({ trending: 'true' });
+    document.getElementById('search').oninput = applyFilters;
+    document.getElementById('filter-difficulty').onchange = applyFilters;
     document.getElementById('daily-btn').onclick = async () => {
       try {
         const q = await Api.questions.daily();
@@ -151,15 +216,16 @@
       if (!sec.classList.contains('hidden')) {
         try {
           const lb = await Api.progress.leaderboard();
-          document.getElementById('leaderboard').innerHTML = lb.length ? lb.map((r,i) =>
-            `<div class="flex justify-between py-3" style="border-bottom:1px solid var(--border)"><span class="font-medium">#${i+1} ${r.name}</span><span class="text-muted text-sm">${r.total} Q · ${r.avg_score}% avg</span></div>`
-          ).join('') : '<p class="text-muted">No leaderboard data yet.</p>';
-        } catch { document.getElementById('leaderboard').innerHTML = '<p class="text-muted">Leaderboard unavailable</p>'; }
+          document.getElementById('leaderboard').innerHTML = lb.length ? lb.map((r, i) =>
+            `<div class="flex justify-between py-3" style="border-bottom:1px solid var(--border)"><span>#${i + 1} ${r.name}</span><span class="text-muted">${r.total} Q · ${r.avg_score}% · 🔥${r.streak || 0}</span></div>`
+          ).join('') : '<p class="text-muted">No data yet.</p>';
+        } catch { document.getElementById('leaderboard').innerHTML = '<p class="text-muted">Unavailable</p>'; }
       }
     };
 
-    loadCompanies(true);
-    loadStats();
+    loadDashboard();
+    loadCompanies({ trending: 'true' });
+    loadRevisions();
   </script>
 </body>
 </html>

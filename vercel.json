@@ -15,6 +15,7 @@
     { "src": "/login", "dest": "/frontend/auth.html" },
     { "src": "/register", "dest": "/frontend/auth.html" },
     { "src": "/dashboard", "dest": "/frontend/dashboard.html" },
+    { "src": "/analytics", "dest": "/frontend/analytics.html" },
     { "src": "/interview", "dest": "/frontend/interview.html" },
     { "src": "/results", "dest": "/frontend/results.html" },
     { "src": "/admin/login", "dest": "/frontend/admin/login.html" },

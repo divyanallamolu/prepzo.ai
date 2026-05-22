@@ -1,4 +1,5 @@
 from routes.analytics import analytics_bp
+from routes.revisions import revisions_bp
 from routes.auth import auth_bp
 from routes.companies import companies_bp
 from routes.evaluate import evaluate_bp
@@ -19,6 +20,7 @@ BLUEPRINTS = (
     feedback_bp,
     users_bp,
     analytics_bp,
+    revisions_bp,
     timer_bp,
 )
 

@@ -1,15 +1,16 @@
-"""Prepzo Flask API application."""
+"""Prepzo Flask API — production application factory."""
 import logging
 import os
 import sys
 
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, abort, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from config import Config
-from extensions import DatabaseUnavailableError, init_db
+from extensions import DatabaseUnavailableError, get_db, init_db
 from routes import register_blueprints
-from utils.env_check import env_flags, missing_env
+from services.seed_service import ensure_seeded
+from utils.env_check import missing_env
 
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
@@ -25,7 +26,6 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config["JSON_AS_ASCII"] = False
-
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
     CORS(
@@ -50,43 +50,35 @@ def create_app() -> Flask:
 
     missing = Config.validate()
     if missing:
-        app.logger.warning("Missing environment variables: %s", ", ".join(missing))
+        app.logger.warning("Missing env: %s", ", ".join(missing))
     else:
         try:
             init_db(app.config["MONGO_URI"])
-            app.logger.info("Prepzo API ready — MongoDB Atlas connected")
+            ensure_seeded(get_db())
+            app.logger.info("Prepzo API ready — MongoDB Atlas")
         except Exception as exc:
-            app.logger.error("MongoDB initialization failed: %s", exc)
+            app.logger.error("Startup failed: %s", exc)
 
     register_blueprints(app)
 
     @app.errorhandler(DatabaseUnavailableError)
-    def handle_db_unavailable(err):
+    def db_err(err):
         return jsonify({"error": "Database unavailable", "detail": str(err)[:300]}), 503
 
-    @app.errorhandler(404)
-    def handle_not_found(err):
-        if request.path.startswith("/api"):
-            return jsonify({"error": "Not found"}), 404
-        return err
-
     @app.errorhandler(Exception)
-    def handle_exception(err):
+    def unhandled(err):
         if request.path.startswith("/api"):
-            app.logger.exception("Unhandled error on %s", request.path)
-            return jsonify({"error": "Internal server error", "detail": str(err)[:200]}), 500
+            app.logger.exception("API error %s", request.path)
+            return jsonify({"error": "Internal server error"}), 500
         raise err
 
     if not os.environ.get("VERCEL"):
-        _register_local_frontend(app)
+        _local_static(app)
 
     return app
 
 
-def _register_local_frontend(app: Flask):
-    """Serve static frontend when running locally (not on Vercel)."""
-    from flask import abort, send_from_directory
-
+def _local_static(app: Flask):
     @app.route("/")
     def home():
         return send_from_directory(FRONTEND_DIR, "index.html")
@@ -98,17 +90,14 @@ def _register_local_frontend(app: Flask):
         full = os.path.join(FRONTEND_DIR, path)
         if os.path.isfile(full):
             return send_from_directory(FRONTEND_DIR, path)
-        if path.endswith(".html") or "." not in os.path.basename(path):
-            candidate = path if path.endswith(".html") else f"{path}.html"
-            if os.path.isfile(os.path.join(FRONTEND_DIR, candidate)):
-                return send_from_directory(FRONTEND_DIR, candidate)
+        if not path.endswith(".html") and os.path.isfile(full + ".html"):
+            return send_from_directory(FRONTEND_DIR, path + ".html")
         abort(404)
 
 
 app = create_app()
 
-
 if __name__ == "__main__":
     os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-    print("Prepzo local server: http://127.0.0.1:5000")
+    print("Prepzo → http://127.0.0.1:5000")
     app.run(host="127.0.0.1", port=5000, debug=True)

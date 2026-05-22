@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prepzo — Analytics</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="app-layout page-enter">
+  <div class="page-bg"><div class="gradient-orb gradient-orb-2"></div></div>
+  <header class="mobile-header">
+    <button type="button" onclick="AppUI.toggleSidebar(true)" class="btn-ghost btn-sm" style="border:none">☰</button>
+    <span class="font-semibold">Analytics</span>
+    <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+  </header>
+  <div id="sidebar-mount"></div>
+  <main class="main-content" style="position:relative;z-index:1">
+    <h1 class="page-heading mb-2">Performance Analytics</h1>
+    <p class="page-subtitle mb-8">Track accuracy, weak topics, and company-wise progress.</p>
+    <div id="analytics-root" class="grid grid-2 gap-6">Loading...</div>
+  </main>
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    document.getElementById('sidebar-mount').innerHTML = Components.appSidebar('analytics');
+    document.getElementById('logout-btn').onclick = () => { Api.setToken(null); location.href = '/'; };
+
+    Api.analytics.me().then(d => {
+      document.getElementById('analytics-root').innerHTML = `
+        <div class="glass-card card-pad"><p class="text-sm text-muted">Attempted</p><p class="stat-value">${d.total_attempted}</p></div>
+        <div class="glass-card card-pad"><p class="text-sm text-muted">Accuracy</p><p class="stat-value">${d.accuracy}%</p></div>
+        <div class="glass-card card-pad"><p class="text-sm text-muted">Correct</p><p class="stat-value" style="color:#22c55e">${d.correct}</p></div>
+        <div class="glass-card card-pad"><p class="text-sm text-muted">Wrong</p><p class="stat-value" style="color:#ef4444">${d.wrong}</p></div>
+        <div class="glass-card card-pad" style="grid-column:1/-1">
+          <h3 class="section-title mb-4" style="font-size:1.1rem">Weak topics</h3>
+          ${(d.weak_topics || []).map(t => `<p>• ${t.category} — ${t.accuracy}% (${t.attempted} attempts)</p>`).join('') || '<p class="text-muted">Practice more to unlock insights.</p>'}
+        </div>
+        <div class="glass-card card-pad" style="grid-column:1/-1">
+          <h3 class="section-title mb-4" style="font-size:1.1rem">Strong topics</h3>
+          ${(d.strong_topics || []).map(t => `<p>• ${t.category} — ${t.accuracy}%</p>`).join('') || '<p class="text-muted">—</p>'}
+        </div>
+        <div class="glass-card card-pad" style="grid-column:1/-1">
+          <h3 class="section-title mb-4" style="font-size:1.1rem">By company</h3>
+          ${(d.by_company || []).slice(0, 8).map(c => `<div class="flex justify-between py-2"><span>${c.company}</span><span>${c.accuracy}% · ${c.attempted} Q</span></div>`).join('')}
+        </div>`;
+    }).catch(e => {
+      document.getElementById('analytics-root').innerHTML = `<p class="text-muted">${e.message}</p>`;
+    });
+  </script>
+</body>
+</html>

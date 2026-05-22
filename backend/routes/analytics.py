@@ -1,9 +1,16 @@
-﻿from flask import Blueprint, jsonify
+﻿from flask import Blueprint, g, jsonify
 
 from extensions import get_db
-from utils.jwt_utils import admin_required
+from services.analytics_service import build_dashboard
+from utils.jwt_utils import admin_required, token_required
 
 analytics_bp = Blueprint("analytics", __name__, url_prefix="/api/analytics")
+
+
+@analytics_bp.route("/me", methods=["GET"])
+@token_required()
+def user_analytics():
+    return jsonify(build_dashboard(get_db(), g.current_user["sub"]))
 
 
 @analytics_bp.route("/dashboard", methods=["GET"])
@@ -23,19 +30,16 @@ def admin_dashboard():
 @admin_required
 def admin_charts():
     db = get_db()
-    by_difficulty = list(db.questions.aggregate([
-        {"$group": {"_id": "$difficulty", "count": {"$sum": 1}}},
-    ]))
-    by_category = list(db.questions.aggregate([
-        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
-    ]))
-    by_company = list(db.questions.aggregate([
-        {"$group": {"_id": "$company_name", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 10},
-    ]))
     return jsonify({
-        "by_difficulty": by_difficulty,
-        "by_category": by_category,
-        "by_company": by_company,
+        "by_difficulty": list(db.questions.aggregate([
+            {"$group": {"_id": "$difficulty", "count": {"$sum": 1}}},
+        ])),
+        "by_category": list(db.questions.aggregate([
+            {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        ])),
+        "by_company": list(db.questions.aggregate([
+            {"$group": {"_id": "$company_name", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 10},
+        ])),
     })

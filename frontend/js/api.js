@@ -131,7 +131,10 @@
     },
 
     companies: {
-      list: (trending) => Api.request(`/companies${trending ? '?trending=true' : ''}`),
+      list: (params = {}) => {
+        const qs = new URLSearchParams(params).toString();
+        return Api.request(`/companies${qs ? `?${qs}` : ''}`);
+      },
       get: (id) => Api.request(`/companies/${id}`),
     },
 
@@ -169,8 +172,13 @@
     },
 
     analytics: {
+      me: () => Api.request('/analytics/me'),
       dashboard: () => Api.request('/analytics/dashboard', { role: 'admin' }),
       charts: () => Api.request('/analytics/charts', { role: 'admin' }),
+    },
+
+    revisions: {
+      list: () => Api.request('/revisions'),
     },
 
     timer: {

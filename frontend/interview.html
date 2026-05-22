@@ -184,7 +184,9 @@
       document.getElementById('submit-answer-btn').textContent = 'Submit Answer';
 
       const q = questions[idx];
-      document.getElementById('question-text').textContent = q.question;
+      const body = q.question_text || q.question || '';
+      document.getElementById('question-text').innerHTML =
+        (q.title ? `<strong style="display:block;margin-bottom:0.75rem;font-size:1.1rem">${q.title}</strong>` : '') + body;
       document.getElementById('badges').innerHTML =
         Components.difficultyBadge(q.difficulty) + ' ' + Components.categoryBadge(q.category);
       document.getElementById('progress-bar').style.width = ((idx + 1) / questions.length * 100) + '%';

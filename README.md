@@ -104,8 +104,10 @@ prepzo/
 │   ├── config.py
 │   ├── extensions.py  # MongoDB connection
 │   ├── routes/        # API blueprints
+│   ├── services/      # Analytics, streaks, revisions, auto-seed
+│   ├── models/        # Serializers
 │   └── utils/
-├── database/          # Seed scripts + question bank JSON
+├── database/          # Seed scripts + questions.json (500 Q)
 ├── ml/                # Answer evaluator
 ├── requirements.txt
 ├── vercel.json
@@ -127,9 +129,14 @@ prepzo/
 | `GET` | `/api/questions/mixed` | Random multi-company set |
 | `POST` | `/api/evaluate` | ML answer scoring |
 | `POST` | `/api/progress` | Save practice session |
-| `GET` | `/api/progress/stats` | Dashboard statistics |
+| `GET` | `/api/progress/stats` | Dashboard statistics (streak, motivation, weekly chart) |
+| `GET` | `/api/analytics/me` | User analytics (accuracy, weak/strong topics, by company) |
+| `GET` | `/api/revisions` | Wrong answers, bookmarks, missed topics, recent practice |
+| `GET` | `/api/questions/daily` | Daily challenge question |
 
 All responses are **JSON**. Errors return `{ "error": "..." }` with appropriate HTTP status codes.
+
+**Auto-seed:** On first API boot, if `companies` or `questions` collections are empty, Prepzo seeds 20 companies and 500 questions from `database/data/questions.json` (MongoDB Atlas only).
 
 ---
 
@@ -162,10 +169,13 @@ cp .env.example backend/.env
 
 ```bash
 cd database
-python seed_data.py
-python generate_question_bank.py
+python generate_questions.py    # builds data/questions.json (25 Q × 20 companies)
+python seed_companies.py --force
 python seed_questions.py --force
+python seed_analytics.py        # indexes for analytics collection
 ```
+
+Or rely on **auto-seed** on deploy (empty collections only).
 
 ### 4. Run locally
 

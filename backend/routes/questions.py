@@ -5,29 +5,11 @@ from bson import ObjectId
 from flask import Blueprint, Response, jsonify, request
 
 from extensions import get_db
+from models.question import serialize_question
 from utils.bulk_import import parse_csv_text, parse_json_payload
 from utils.jwt_utils import admin_required
 
 questions_bp = Blueprint("questions", __name__, url_prefix="/api/questions")
-
-
-def _question(doc: dict, include_answer: bool = True) -> dict:
-    q = {
-        "id": str(doc["_id"]),
-        "company_id": doc.get("company_id", ""),
-        "company_name": doc.get("company_name", ""),
-        "question": doc.get("question", ""),
-        "category": doc.get("category", "Technical"),
-        "difficulty": doc.get("difficulty", "Medium"),
-        "year_asked": doc.get("year_asked", ""),
-        "tags": doc.get("tags", []),
-        "tips": doc.get("tips", []),
-        "key_points": doc.get("key_points", []),
-    }
-    if include_answer:
-        q["answer"] = doc.get("answer", "")
-        q["explanation"] = doc.get("explanation", "")
-    return q
 
 
 @questions_bp.route("", methods=["GET"])
@@ -53,7 +35,7 @@ def list_questions():
         ]
 
     include_answer = request.args.get("preview") != "true"
-    questions = [_question(q, include_answer=include_answer) for q in db.questions.find(query)]
+    questions = [serialize_question(q, include_answer=include_answer) for q in db.questions.find(query)]
     return jsonify(questions)
 
 
@@ -64,7 +46,7 @@ def mixed_questions():
     limit = min(int(request.args.get("limit", 20)), 50)
     pipeline = [{"$sample": {"size": limit}}]
     result = list(db.questions.aggregate(pipeline))
-    return jsonify([_question(q, include_answer=False) for q in result])
+    return jsonify([serialize_question(q, include_answer=False) for q in result])
 
 
 @questions_bp.route("/<question_id>", methods=["GET"])
@@ -76,7 +58,7 @@ def get_question(question_id):
         return jsonify({"error": "Invalid question id"}), 400
     if not doc:
         return jsonify({"error": "Question not found"}), 404
-    return jsonify(_question(doc))
+    return jsonify(serialize_question(doc))
 
 
 @questions_bp.route("", methods=["POST"])
@@ -106,7 +88,7 @@ def create_question():
         {"_id": ObjectId(data["company_id"])},
         {"$inc": {"question_count": 1}},
     )
-    return jsonify(_question({**doc, "_id": result.inserted_id})), 201
+    return jsonify(serialize_question({**doc, "_id": result.inserted_id})), 201
 
 
 @questions_bp.route("/<question_id>", methods=["PUT"])
@@ -129,7 +111,7 @@ def update_question(question_id):
 
     db.questions.update_one({"_id": oid}, {"$set": updates})
     doc = db.questions.find_one({"_id": oid})
-    return jsonify(_question(doc))
+    return jsonify(serialize_question(doc))
 
 
 @questions_bp.route("/<question_id>", methods=["DELETE"])
@@ -255,4 +237,4 @@ def daily_challenge():
     result = list(db.questions.aggregate(pipeline))
     if not result:
         return jsonify({"error": "No questions available"}), 404
-    return jsonify(_question(result[0], include_answer=False))
+    return jsonify(serialize_question(result[0], include_answer=False))
