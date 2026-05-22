@@ -1,15 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "cp -r backend frontend/api/_backend && cp -r ml frontend/api/ml && cp -r database frontend/api/database",
-  "installCommand": "pip install -r frontend/api/requirements.txt",
+  "buildCommand": "cp -r backend api/_backend && cp -r ml api/ml && cp -r database api/database",
+  "installCommand": "pip install -r api/requirements.txt",
   "outputDirectory": "frontend",
   "functions": {
-    "frontend/api/index.py": {
+    "api/index.py": {
       "memory": 1024,
       "maxDuration": 30
     },
-    "frontend/api/health.py": {
+    "api/health.py": {
       "maxDuration": 10
     }
   },
