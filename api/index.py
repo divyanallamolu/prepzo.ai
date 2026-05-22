@@ -22,6 +22,8 @@ os.chdir(BACKEND)
 
 from app import app  # noqa: E402
 
+print("Prepzo API running successfully on Vercel", flush=True)
+
 
 def _path_from_environ(environ) -> str:
     path = environ.get("PATH_INFO") or ""

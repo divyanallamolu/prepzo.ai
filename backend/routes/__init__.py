@@ -1,3 +1,4 @@
+from routes.debug import debug_bp
 from routes.health import health_bp
 from routes.analytics import analytics_bp
 from routes.auth import auth_bp
@@ -11,6 +12,7 @@ from routes.users import users_bp
 
 ALL_BLUEPRINTS = (
     health_bp,
+    debug_bp,
     auth_bp,
     companies_bp,
     questions_bp,

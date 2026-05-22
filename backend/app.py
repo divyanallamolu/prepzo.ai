@@ -59,16 +59,35 @@ def create_app():
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
         return response
 
+    import logging
+
+    from utils.env_check import log_startup_diagnostics
+
+    logging.basicConfig(level=logging.INFO)
+
     init_db(app.config["MONGO_URI"])
     mode = get_db_mode()
     if mode == "mongodb":
-        app.logger.info("Connected to MongoDB")
+        app.logger.info("Connected to MongoDB Atlas")
     else:
         from extensions import get_db
-        seed_if_empty(get_db())
-        app.logger.warning("MongoDB unavailable — using in-memory database (data resets on restart)")
+        try:
+            seed_if_empty(get_db())
+        except Exception as seed_exc:
+            app.logger.error("Dev seed failed (non-fatal): %s", seed_exc)
+        app.logger.warning("MongoDB unavailable — using in-memory database")
+
+    log_startup_diagnostics(app.logger)
+    print("Prepzo API running successfully on Vercel", flush=True)
 
     register_blueprints(app)
+
+    @app.errorhandler(Exception)
+    def handle_unhandled_exception(err):
+        if request.path.startswith("/api"):
+            app.logger.error("Unhandled API error on %s: %s", request.path, err, exc_info=True)
+            return jsonify({"error": "Internal server error", "detail": str(err)[:200]}), 500
+        raise err
 
     @app.route("/uploads/logos/<path:filename>")
     def serve_logo(filename):

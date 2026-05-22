@@ -23,7 +23,13 @@ If `/api/*` returns **404 NOT_FOUND** (Vercel header, not Flask), Python functio
 After deploy, open:
 
 - https://prepzo-ai.vercel.app/api/health → `{"status":"ok",...}`
+- https://prepzo-ai.vercel.app/api/debug/env → env + MongoDB status (no secrets)
 - https://prepzo-ai.vercel.app/api/companies → JSON array
+
+**MongoDB Atlas URI** must include a database name, e.g.  
+`mongodb+srv://user:pass@cluster.mongodb.net/prepzo?retryWrites=true&w=majority`
+
+`dnspython` and `certifi` are required for `mongodb+srv` (in `api/requirements.txt`).
 
 In Vercel → Deployments → latest → **Functions** tab must list:
 
