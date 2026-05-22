@@ -16,6 +16,12 @@ for path in (BACKEND, ROOT):
 
 os.chdir(BACKEND)
 
+# Force backend package into serverless bundle
+import routes.auth  # noqa: F401,E402
+import routes.companies  # noqa: F401,E402
+import routes.health  # noqa: F401,E402
+import routes.questions  # noqa: F401,E402
+
 from app import app  # noqa: E402  Flask instance from backend/app.py
 
 
