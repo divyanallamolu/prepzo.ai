@@ -47,6 +47,9 @@ def save_progress():
         "category": data.get("category", ""),
         "difficulty": data.get("difficulty", ""),
         "user_answer": data.get("user_answer", ""),
+        "thinking_seconds_used": data.get("thinking_seconds_used", 0),
+        "time_spent_seconds": data.get("time_spent_seconds", 0),
+        "revealed_early": data.get("revealed_early", False),
         "completed_at": datetime.now(timezone.utc).isoformat(),
     }
     db.progress.insert_one(doc)
@@ -89,11 +92,37 @@ def get_stats():
     recent_companies = db.progress.distinct("company_name", {"user_id": user_id})
 
     user = db.users.find_one({"_id": ObjectId(user_id)})
+
+    timing_pipeline = [
+        {"$match": {"user_id": user_id, "time_spent_seconds": {"$gt": 0}}},
+        {"$group": {
+            "_id": None,
+            "avg_time_spent": {"$avg": "$time_spent_seconds"},
+            "min_time_spent": {"$min": "$time_spent_seconds"},
+            "total_time_spent": {"$sum": "$time_spent_seconds"},
+        }},
+    ]
+    timing = list(db.progress.aggregate(timing_pipeline))
+    timing_stats = timing[0] if timing else {}
+
+    fastest = list(db.progress.find(
+        {"user_id": user_id, "time_spent_seconds": {"$gt": 0}},
+        {"company_name": 1, "time_spent_seconds": 1, "difficulty": 1, "completed_at": 1},
+    ).sort("time_spent_seconds", 1).limit(5))
+    for f in fastest:
+        f["id"] = str(f.pop("_id", ""))
+
     return jsonify({
         "total_practiced": total,
         "by_category": by_category,
         "recent_companies": recent_companies[:5],
         "streak": user.get("streak", 0) if user else 0,
+        "timing": {
+            "avg_time_spent_seconds": round(timing_stats.get("avg_time_spent", 0), 1),
+            "min_time_spent_seconds": timing_stats.get("min_time_spent", 0),
+            "total_time_spent_seconds": timing_stats.get("total_time_spent", 0),
+            "fastest_completions": fastest,
+        },
     })
 
 

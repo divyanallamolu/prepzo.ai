@@ -3,65 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prepzo - Sign In</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Prepzo — Sign In</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body class="min-h-screen flex">
-  <div class="gradient-orb gradient-orb-1"></div>
-  <div class="hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]">
-    <div class="text-center max-w-md">
-      <a href="/" class="brand-logo inline-block mb-6">
-        <img src="/assets/logo.png" alt="Prepzo" class="h-16 sm:h-20 w-auto max-w-[280px] object-contain mx-auto" />
-      </a>
-      <p class="font-mono text-[var(--text-muted)]">Prepare. Practice. Perform.</p>
-      <p class="mt-8 text-[var(--text-muted)]">Join thousands preparing for their dream roles at top tech companies.</p>
-    </div>
+<body class="auth-page page-enter">
+  <div class="page-bg">
+    <div class="gradient-orb gradient-orb-1"></div>
+    <div class="gradient-orb gradient-orb-2"></div>
   </div>
-  <div class="flex-1 flex items-center justify-center p-8">
-    <div class="w-full max-w-md">
-      <div class="flex justify-end mb-6">
+
+  <section class="auth-brand">
+    <div class="text-center" style="position:relative;z-index:1">
+      <a href="/" class="brand-logo" style="display:inline-block;margin-bottom:1.5rem">
+        <img src="/assets/logo.png" alt="Prepzo" style="height:72px;width:auto;max-width:280px">
+      </a>
+      <p class="brand-tagline">Prepare. Practice. Perform.</p>
+      <p class="text-muted mt-8" style="max-width:360px;margin-left:auto;margin-right:auto">
+        Join thousands preparing for dream roles at Google, Amazon, Microsoft, and more.
+      </p>
+      <div class="hero-stats mt-12" style="border:none;padding-top:0">
+        <div class="hero-stat"><strong>AI</strong><span class="text-sm text-muted">Scoring</span></div>
+        <div class="hero-stat"><strong>10+</strong><span class="text-sm text-muted">Companies</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-form-wrap">
+    <div style="width:100%;max-width:420px;position:relative;z-index:1">
+      <div class="flex justify-between items-center mb-6">
+        <a href="/" class="text-sm text-muted hide-desktop">← Home</a>
         <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
       </div>
-      <div class="glass-card p-8">
+      <div class="glass-card card-pad">
         <h2 id="form-title" class="text-2xl font-bold mb-2">Welcome back</h2>
-        <p id="form-subtitle" class="text-sm text-[var(--text-muted)] mb-8">Sign in to continue practicing</p>
-        <form id="auth-form" class="space-y-5">
-          <div id="name-field" class="hidden">
-            <label class="text-sm text-[var(--text-muted)]">Full Name</label>
-            <input type="text" id="name" class="w-full mt-1 px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow transition" placeholder="Jane Doe">
+        <p id="form-subtitle" class="text-sm text-muted mb-8">Sign in to continue practicing</p>
+        <form id="auth-form">
+          <div id="name-field" class="hidden mb-4">
+            <label class="label" for="name">Full Name</label>
+            <input type="text" id="name" class="input" placeholder="Jane Doe">
           </div>
-          <div>
-            <label class="text-sm text-[var(--text-muted)]">Email</label>
-            <input type="email" id="email" required class="w-full mt-1 px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow transition" placeholder="you@email.com">
+          <div class="mb-4">
+            <label class="label" for="email">Email</label>
+            <input type="email" id="email" required class="input" placeholder="you@email.com">
           </div>
-          <div>
-            <label class="text-sm text-[var(--text-muted)]">Password</label>
-            <div class="relative mt-1">
-              <input type="password" id="password" required minlength="6" class="w-full px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow transition pr-12" placeholder="Min 6 characters">
-              <button type="button" id="toggle-pwd" class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm">Show</button>
+          <div class="mb-4">
+            <label class="label" for="password">Password</label>
+            <div class="relative">
+              <input type="password" id="password" required minlength="6" class="input" placeholder="Min 6 characters">
+              <button type="button" id="toggle-pwd" class="btn-ghost btn-sm" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);padding:0.25rem 0.5rem;border:none">Show</button>
             </div>
           </div>
-          <p id="error-msg" class="text-red-400 text-sm hidden"></p>
+          <p id="error-msg" class="text-sm hidden mb-4" style="color:#f87171"></p>
           <button type="submit" id="submit-btn" class="btn-primary w-full">Sign In</button>
         </form>
-        <p class="mt-6 text-center text-sm text-[var(--text-muted)]">
+        <p class="mt-6 text-center text-sm text-muted">
           <span id="toggle-text">Don't have an account?</span>
-          <button id="toggle-mode" class="text-[var(--accent)] font-medium ml-1">Sign up</button>
+          <button type="button" id="toggle-mode" class="text-accent font-medium" style="background:none;border:none;cursor:pointer;margin-left:4px">Sign up</button>
         </p>
-        <a href="/" class="block mt-4 text-center text-sm text-[var(--text-muted)] hover:text-[var(--accent)]">Back to home</a>
+        <a href="/" class="block mt-4 text-center text-sm text-muted">← Back to home</a>
       </div>
     </div>
-  </div>
+  </section>
+
   <script src="/js/theme.js"></script>
   <script src="/js/api.js"></script>
   <script>
-    if (typeof Api === 'undefined') {
-      const err = document.getElementById('error-msg');
-      err.textContent = 'App scripts failed to load. Press Ctrl+F5 to hard refresh.';
-      err.classList.remove('hidden');
-    }
-
     const params = new URLSearchParams(location.search);
     let isRegister = params.get('mode') === 'register';
 
@@ -74,31 +80,21 @@
       document.getElementById('toggle-mode').textContent = isRegister ? 'Sign in' : 'Sign up';
     }
     updateUI();
-
     document.getElementById('toggle-mode').onclick = () => { isRegister = !isRegister; updateUI(); };
     document.getElementById('toggle-pwd').onclick = () => {
       const inp = document.getElementById('password');
       inp.type = inp.type === 'password' ? 'text' : 'password';
       document.getElementById('toggle-pwd').textContent = inp.type === 'password' ? 'Show' : 'Hide';
     };
-
     document.getElementById('auth-form').onsubmit = async (e) => {
       e.preventDefault();
-      if (typeof Api === 'undefined') {
-        document.getElementById('error-msg').textContent = 'App scripts failed to load. Press Ctrl+F5 to hard refresh.';
-        document.getElementById('error-msg').classList.remove('hidden');
-        return;
-      }
       const err = document.getElementById('error-msg');
       err.classList.add('hidden');
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
       btn.textContent = 'Loading...';
       try {
-        const body = {
-          email: document.getElementById('email').value,
-          password: document.getElementById('password').value,
-        };
+        const body = { email: document.getElementById('email').value, password: document.getElementById('password').value };
         if (isRegister) body.name = document.getElementById('name').value;
         const res = isRegister ? await Api.auth.register(body) : await Api.auth.login(body);
         Api.setToken(res.token);
@@ -112,7 +108,7 @@
         btn.textContent = isRegister ? 'Create Account' : 'Sign In';
       }
     };
-    if (typeof Api !== 'undefined' && Api.getToken()) location.href = '/dashboard.html';
+    if (Api.getToken()) location.href = '/dashboard.html';
   </script>
 </body>
 </html>

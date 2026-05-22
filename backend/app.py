@@ -57,6 +57,10 @@ def create_app():
 
     @app.route("/")
     def home():
+        return _serve_frontend("index.html")
+
+    @app.route("/auth.html")
+    def auth_page():
         return _serve_frontend("auth.html")
 
     @app.route("/admin")

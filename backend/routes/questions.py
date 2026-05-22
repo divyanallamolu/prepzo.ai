@@ -36,6 +36,8 @@ def list_questions():
     company_id = request.args.get("company_id")
     category = request.args.get("category")
     difficulty = request.args.get("difficulty")
+    search = (request.args.get("search") or request.args.get("q") or "").strip()
+
     query = {}
     if company_id:
         query["company_id"] = company_id
@@ -43,6 +45,12 @@ def list_questions():
         query["category"] = category
     if difficulty:
         query["difficulty"] = difficulty
+    if search:
+        query["$or"] = [
+            {"question": {"$regex": search, "$options": "i"}},
+            {"answer": {"$regex": search, "$options": "i"}},
+            {"company_name": {"$regex": search, "$options": "i"}},
+        ]
 
     include_answer = request.args.get("preview") != "true"
     questions = [_question(q, include_answer=include_answer) for q in db.questions.find(query)]
@@ -217,9 +225,11 @@ def bulk_upload_questions():
 @admin_required
 def bulk_template():
     csv_content = (
-        "company_name,difficulty,category,question,answer,explanation\n"
-        'Google,Easy,Technical,"What is OOP?","Object Oriented Programming is a paradigm...","Explain classes and objects."\n'
-        'Amazon,Medium,Behavioral,"Tell me about yourself","Use a concise professional summary...","Keep it under 2 minutes."\n'
+        "company_name,difficulty,category,question,answer,explanation,year_asked\n"
+        'Google,Medium,DSA,"Two Sum problem","Use hash map O(n)","Check complement each step",2024\n'
+        'Google,Hard,System Design,"Design URL shortener","Hash IDs + KV store + CDN","Discuss scale and caching",2025\n'
+        'Amazon,Medium,Behavioral,"Customer obsession example","STAR with metrics","Use Leadership Principles",2024\n'
+        'TCS,Easy,HR,"Why TCS?","Growth and learning","Be specific",2024\n'
     )
     return Response(
         csv_content,

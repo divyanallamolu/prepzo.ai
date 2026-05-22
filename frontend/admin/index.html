@@ -3,161 +3,254 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prepzo Admin Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Prepzo — Admin Dashboard</title>
   <link rel="stylesheet" href="/css/styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
-<body class="flex min-h-screen">
-  <div id="admin-overlay" class="admin-overlay" onclick="toggleAdminMenu(false)"></div>
+<body class="admin-layout">
+  <div id="admin-overlay" class="admin-overlay" onclick="AdminApp.toggleMenu(false)"></div>
 
-  <aside id="admin-sidebar" class="admin-sidebar w-64 border-r border-[var(--border)] p-6 fixed h-full flex flex-col z-[60]">
-    <a href="/admin/" class="brand-logo block mb-2">
-      <img src="/assets/logo.png" alt="Prepzo" class="h-10 w-auto max-w-[150px] object-contain" />
+  <aside id="admin-sidebar" class="admin-sidebar">
+    <a href="/admin/" class="admin-brand">
+      <img src="/assets/logo.png" alt="Prepzo" width="140" height="40">
     </a>
-    <p class="text-xs text-[var(--accent)] font-semibold mb-6 tracking-wide">ADMIN PANEL</p>
-    <nav class="space-y-1 flex-1">
-      <button data-tab="overview" class="sidebar-link active w-full text-left">Overview</button>
-      <button data-tab="companies" class="sidebar-link w-full text-left">Companies</button>
-      <button data-tab="questions" class="sidebar-link w-full text-left">Questions</button>
-      <button data-tab="bulk" class="sidebar-link w-full text-left">Bulk Upload</button>
-      <button data-tab="users" class="sidebar-link w-full text-left">Users</button>
-      <button data-tab="feedback" class="sidebar-link w-full text-left">Feedback</button>
+    <p class="admin-badge">ADMIN PANEL</p>
+    <nav class="admin-nav" id="admin-nav">
+      <button type="button" data-tab="overview" class="sidebar-link active">Overview</button>
+      <button type="button" data-tab="companies" class="sidebar-link">Companies</button>
+      <button type="button" data-tab="questions" class="sidebar-link">Questions</button>
+      <button type="button" data-tab="bulk" class="sidebar-link">Bulk Upload</button>
+      <button type="button" data-tab="timers" class="sidebar-link">Timer Settings</button>
+      <button type="button" data-tab="users" class="sidebar-link">Users</button>
+      <button type="button" data-tab="feedback" class="sidebar-link">Feedback</button>
     </nav>
-    <button id="logout" class="sidebar-link text-red-400 w-full text-left">Logout</button>
+    <button type="button" id="logout-btn" class="sidebar-link admin-logout">Logout</button>
   </aside>
 
-  <div class="flex-1 md:ml-64 w-full min-w-0">
-    <header class="admin-mobile-header sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur px-4 h-14 items-center justify-between">
-      <button type="button" onclick="toggleAdminMenu(true)" class="p-2 text-[var(--text-muted)]" aria-label="Menu">?</button>
-      <img src="/assets/logo.png" alt="Prepzo" class="h-7 w-auto max-w-[120px] object-contain" />
-      <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <button type="button" class="btn-ghost btn-sm admin-menu-btn" onclick="AdminApp.toggleMenu(true)" aria-label="Open menu">☰</button>
+      <div class="admin-topbar-center">
+        <h1 id="page-title" class="admin-page-title">Overview</h1>
+        <p id="admin-user-label" class="text-xs text-muted"></p>
+      </div>
+      <div class="theme-toggle" data-theme-toggle title="Toggle theme"><div class="theme-toggle-knob"></div></div>
     </header>
 
-    <main class="p-4 sm:p-6">
-      <header class="hidden md:flex justify-between items-center mb-8">
-        <h2 id="page-title" class="text-2xl font-bold">Overview</h2>
-        <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
-      </header>
+    <div id="admin-alert" class="admin-alert hidden" role="alert"></div>
 
-      <section id="tab-overview" class="tab-panel">
-        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stats-cards"></div>
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="glass-card p-6"><canvas id="chart-difficulty" height="180"></canvas></div>
-          <div class="glass-card p-6"><canvas id="chart-category" height="180"></canvas></div>
+    <main class="admin-content">
+      <!-- Overview -->
+      <section id="tab-overview" class="tab-panel active">
+        <div class="admin-stats-grid" id="stats-cards">
+          <div class="admin-loading">Loading stats...</div>
+        </div>
+        <div class="admin-charts-grid">
+          <div class="glass-card card-pad">
+            <h3 class="font-semibold mb-4">Questions by Difficulty</h3>
+            <canvas id="chart-difficulty" height="200"></canvas>
+          </div>
+          <div class="glass-card card-pad">
+            <h3 class="font-semibold mb-4">Questions by Category</h3>
+            <canvas id="chart-category" height="200"></canvas>
+          </div>
         </div>
       </section>
 
-      <section id="tab-companies" class="tab-panel hidden">
-        <div class="flex flex-wrap gap-3 mb-4 justify-between">
-          <input id="search-companies" placeholder="Search companies..." class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm flex-1 min-w-[200px]">
-          <button onclick="openCompanyModal()" class="btn-primary text-sm whitespace-nowrap">+ Add Company</button>
+      <!-- Companies -->
+      <section id="tab-companies" class="tab-panel">
+        <div class="admin-toolbar">
+          <input type="search" id="search-companies" class="input" placeholder="Search companies..." style="flex:1;min-width:180px">
+          <button type="button" class="btn-primary btn-sm" onclick="AdminApp.openCompanyModal()">+ Add Company</button>
         </div>
-        <div id="companies-table" class="glass-card overflow-x-auto"></div>
+        <div id="companies-table" class="glass-card admin-table-wrap">
+          <div class="admin-loading">Loading companies...</div>
+        </div>
       </section>
 
-      <section id="tab-questions" class="tab-panel hidden">
-        <div class="flex flex-wrap gap-3 mb-4">
-          <input id="search-questions" placeholder="Search questions..." class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm flex-1 min-w-[180px]">
-          <select id="filter-company" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm">
-            <option value="">All Companies</option>
-          </select>
-          <select id="filter-difficulty" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm">
+      <!-- Questions -->
+      <section id="tab-questions" class="tab-panel">
+        <div class="admin-toolbar admin-toolbar-wrap">
+          <input type="search" id="search-questions" class="input" placeholder="Search questions..." style="flex:1;min-width:160px">
+          <select id="filter-company" class="select"><option value="">All Companies</option></select>
+          <select id="filter-difficulty" class="select">
             <option value="">All Difficulties</option>
             <option>Easy</option><option>Medium</option><option>Hard</option>
           </select>
-          <select id="filter-category" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-sm">
+          <select id="filter-category" class="select">
             <option value="">All Categories</option>
             <option>HR</option><option>Technical</option><option>Behavioral</option>
+            <option>DSA</option><option>System Design</option><option>Communication</option>
           </select>
-          <button onclick="openQuestionModal()" class="btn-primary text-sm whitespace-nowrap">+ Add Question</button>
+          <button type="button" class="btn-primary btn-sm" onclick="AdminApp.openQuestionModal()">+ Add Question</button>
         </div>
-        <p id="questions-count" class="text-xs text-[var(--text-muted)] mb-2"></p>
-        <div id="questions-table" class="glass-card overflow-x-auto"></div>
+        <p id="questions-count" class="text-xs text-muted mb-2"></p>
+        <div id="questions-table" class="glass-card admin-table-wrap">
+          <div class="admin-loading">Loading questions...</div>
+        </div>
       </section>
 
-      <section id="tab-bulk" class="tab-panel hidden">
-        <div class="glass-card p-6 max-w-3xl">
+      <!-- Bulk Upload -->
+      <section id="tab-bulk" class="tab-panel">
+        <div class="glass-card card-pad admin-bulk-card">
           <h3 class="text-lg font-semibold mb-2">Bulk Upload Questions</h3>
-          <p class="text-sm text-[var(--text-muted)] mb-6">Upload 20+ questions at once via CSV or JSON. Companies must exist before importing.</p>
-
-          <div class="mb-4 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-sm font-mono text-[var(--text-muted)]">
-            CSV columns: <span class="text-[var(--accent)]">company_name, difficulty, category, question, answer, explanation</span>
+          <p class="text-sm text-muted mb-6">Upload 20+ questions via CSV or JSON. Companies must exist first.</p>
+          <div class="admin-code-hint font-mono text-sm">
+            CSV: <span class="text-accent">company_name, difficulty, category, question, answer, explanation</span>
           </div>
-
-          <div class="flex flex-wrap gap-3 mb-4">
-            <button type="button" onclick="downloadBulkTemplate()" class="btn-ghost text-sm">Download CSV Template</button>
+          <div class="flex flex-wrap gap-3 mt-4 mb-4">
+            <button type="button" class="btn-ghost btn-sm" onclick="AdminApp.downloadBulkTemplate()">Download CSV Template</button>
           </div>
-
-          <div class="space-y-4">
-            <div>
-              <label class="text-sm text-[var(--text-muted)] block mb-2">Upload CSV or JSON file</label>
-              <input type="file" id="bulk-file" accept=".csv,.json" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:text-white">
-            </div>
-            <div class="upload-progress hidden" id="upload-progress-wrap">
-              <div class="upload-progress-bar" id="upload-progress-bar"></div>
-            </div>
-            <button type="button" id="bulk-upload-btn" onclick="runBulkUpload()" class="btn-primary w-full sm:w-auto">Upload Questions</button>
+          <label class="label">Upload CSV or JSON</label>
+          <input type="file" id="bulk-file" accept=".csv,.json,.txt" class="input mb-4">
+          <div class="upload-progress hidden" id="upload-progress-wrap">
+            <div class="upload-progress-bar" id="upload-progress-bar"></div>
           </div>
-
+          <button type="button" id="bulk-upload-btn" class="btn-primary" onclick="AdminApp.runBulkUpload()">Upload Questions</button>
           <div id="bulk-result" class="mt-6 hidden text-sm"></div>
         </div>
       </section>
 
-      <section id="tab-users" class="tab-panel hidden">
-        <div id="users-table" class="glass-card overflow-x-auto"></div>
+      <!-- Users -->
+      <section id="tab-timers" class="tab-panel">
+        <div class="glass-card card-pad mb-6">
+          <h3 class="text-lg font-semibold mb-2">Default Timer Settings</h3>
+          <p class="text-sm text-muted mb-6">Applied when no company or difficulty override exists.</p>
+          <form id="timer-defaults-form" class="grid grid-2 gap-4">
+            <div>
+              <label class="label">Thinking time (seconds)</label>
+              <input type="number" id="def-thinking" class="input" min="30" max="3600" value="180">
+              <p class="text-xs text-muted mt-1">e.g. 180 = 3 minutes before answer shows</p>
+            </div>
+            <div>
+              <label class="label">Interview duration (seconds)</label>
+              <input type="number" id="def-interview" class="input" min="300" max="7200" value="1200">
+              <p class="text-xs text-muted mt-1">e.g. 1200 = 20 minute session</p>
+            </div>
+            <div>
+              <label class="label">Reveal delay (seconds)</label>
+              <input type="number" id="def-reveal-delay" class="input" min="0" max="120" value="0">
+            </div>
+            <div>
+              <label class="label flex items-center gap-2" style="margin-top:1.5rem">
+                <input type="checkbox" id="def-auto-reveal" checked> Auto-reveal answer when thinking time ends
+              </label>
+            </div>
+          </form>
+        </div>
+
+        <div class="glass-card card-pad mb-6">
+          <h3 class="text-lg font-semibold mb-4">Per Difficulty (thinking time)</h3>
+          <div class="grid grid-3 gap-4">
+            <div><label class="label">Easy (sec)</label><input type="number" id="diff-easy" class="input" min="30" value="120"></div>
+            <div><label class="label">Medium (sec)</label><input type="number" id="diff-medium" class="input" min="30" value="240"></div>
+            <div><label class="label">Hard (sec)</label><input type="number" id="diff-hard" class="input" min="30" value="360"></div>
+          </div>
+        </div>
+
+        <div class="glass-card card-pad mb-6">
+          <h3 class="text-lg font-semibold mb-4">Per Company Overrides</h3>
+          <p class="text-sm text-muted mb-4">Example: Google 120s, Amazon 180s thinking time.</p>
+          <div id="company-timers-list" class="admin-loading">Loading...</div>
+          <button type="button" class="btn-ghost btn-sm mt-4" onclick="AdminApp.addCompanyTimerRow()">+ Add company override</button>
+        </div>
+
+        <button type="button" id="save-timers-btn" class="btn-primary" onclick="AdminApp.saveTimerSettings()">Save Timer Settings</button>
+        <p id="timer-save-status" class="text-sm text-muted mt-3"></p>
       </section>
 
-      <section id="tab-feedback" class="tab-panel hidden">
-        <div id="feedback-list" class="space-y-4"></div>
+      <section id="tab-users" class="tab-panel">
+        <div id="users-table" class="glass-card admin-table-wrap">
+          <div class="admin-loading">Loading users...</div>
+        </div>
+      </section>
+
+      <!-- Feedback -->
+      <section id="tab-feedback" class="tab-panel">
+        <div id="feedback-list" class="admin-feedback-list">
+          <div class="admin-loading">Loading feedback...</div>
+        </div>
       </section>
     </main>
   </div>
 
   <!-- Company Modal -->
-  <div id="company-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4">
-    <div class="glass-card p-6 w-full max-w-md">
+  <div id="company-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal glass-card card-pad">
       <h3 class="font-semibold mb-4" id="company-modal-title">Add Company</h3>
-      <form id="company-form" class="space-y-3">
+      <form id="company-form">
         <input type="hidden" id="company-id">
-        <input type="text" id="company-name" required placeholder="Company name" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
-        <textarea id="company-desc" placeholder="Description" rows="3" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="company-trending"> Trending company</label>
-        <div>
-          <label class="text-sm text-[var(--text-muted)]">Company logo</label>
-          <input type="file" id="company-logo" accept="image/*" class="text-sm w-full mt-1">
+        <div class="mb-4">
+          <label class="label" for="company-name">Company name</label>
+          <input type="text" id="company-name" required class="input">
         </div>
-        <div class="flex gap-2 pt-2">
+        <div class="mb-4">
+          <label class="label" for="company-desc">Description</label>
+          <textarea id="company-desc" rows="3" class="input"></textarea>
+        </div>
+        <label class="flex items-center gap-2 text-sm mb-4">
+          <input type="checkbox" id="company-trending"> Trending company
+        </label>
+        <div class="mb-4">
+          <label class="label" for="company-logo">Logo image</label>
+          <input type="file" id="company-logo" accept="image/*" class="input">
+        </div>
+        <div class="flex gap-3">
           <button type="submit" class="btn-primary flex-1">Save</button>
-          <button type="button" onclick="closeModal('company-modal')" class="btn-ghost flex-1">Cancel</button>
+          <button type="button" class="btn-ghost flex-1" onclick="AdminApp.closeModal('company-modal')">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- Question Modal -->
-  <div id="question-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4 overflow-y-auto">
-    <div class="glass-card p-6 w-full max-w-2xl my-8">
+  <div id="question-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal glass-card card-pad" style="max-width:640px">
       <h3 class="font-semibold mb-4" id="question-modal-title">Add Question</h3>
-      <form id="question-form" class="space-y-3">
-        <select id="q-company" required class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></select>
-        <textarea id="q-text" required placeholder="Interview question" rows="2" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
-        <textarea id="q-answer" required placeholder="Ideal answer" rows="3" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
-        <textarea id="q-explanation" placeholder="Explanation (optional � defaults to answer)" rows="2" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"></textarea>
-        <div class="grid sm:grid-cols-3 gap-3">
-          <select id="q-difficulty" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
-            <option>Easy</option><option selected>Medium</option><option>Hard</option>
-          </select>
-          <select id="q-category" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
-            <option>HR</option><option selected>Technical</option><option>Behavioral</option>
-          </select>
-          <input type="text" id="q-year" placeholder="Year asked" class="px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
-        </div>
-        <input type="text" id="q-tags" placeholder="Tags (comma separated)" class="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+      <form id="question-form">
         <input type="hidden" id="question-id">
-        <div class="flex gap-2 pt-2">
+        <div class="mb-4">
+          <label class="label" for="q-company">Company</label>
+          <select id="q-company" required class="select"></select>
+        </div>
+        <div class="mb-4">
+          <label class="label" for="q-text">Question</label>
+          <textarea id="q-text" required rows="2" class="input"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="label" for="q-answer">Ideal answer</label>
+          <textarea id="q-answer" required rows="3" class="input"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="label" for="q-explanation">Explanation</label>
+          <textarea id="q-explanation" rows="2" class="input" placeholder="Optional — defaults to answer"></textarea>
+        </div>
+        <div class="grid grid-3 gap-3 mb-4">
+          <div>
+            <label class="label" for="q-difficulty">Difficulty</label>
+            <select id="q-difficulty" class="select">
+              <option>Easy</option><option selected>Medium</option><option>Hard</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="q-category">Category</label>
+            <select id="q-category" class="select">
+              <option>HR</option><option selected>Technical</option><option>Behavioral</option>
+              <option>DSA</option><option>System Design</option><option>Communication</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="q-year">Year asked</label>
+            <input type="text" id="q-year" class="input" placeholder="e.g. 2024">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="label" for="q-tags">Tags (comma separated)</label>
+          <input type="text" id="q-tags" class="input">
+        </div>
+        <div class="flex gap-3">
           <button type="submit" class="btn-primary flex-1">Save Question</button>
-          <button type="button" onclick="closeModal('question-modal')" class="btn-ghost flex-1">Cancel</button>
+          <button type="button" class="btn-ghost flex-1" onclick="AdminApp.closeModal('question-modal')">Cancel</button>
         </div>
       </form>
     </div>

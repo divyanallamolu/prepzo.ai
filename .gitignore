@@ -1,4 +1,33 @@
-venv/ 
-backend/venv/ 
-__pycache__/ 
-.env 
+# Python
+venv/
+backend/venv/
+api/_vendor/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Uploads (runtime files)
+backend/uploads/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Vercel
+.vercel
+
+# Node (not used, but ignore if added)
+node_modules/

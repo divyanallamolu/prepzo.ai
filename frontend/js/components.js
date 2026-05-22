@@ -1,111 +1,142 @@
-﻿const Components = {
+﻿/**
+ * Prepzo — reusable HTML components
+ */
+const Components = {
   logo(size = 'md', href = '/') {
-    const heights = { sm: 'h-7', md: 'h-9', lg: 'h-12', xl: 'h-16' };
+    const heights = { sm: '32px', md: '40px', lg: '56px', xl: '72px' };
     const h = heights[size] || heights.md;
-    return `<a href="${href}" class="brand-logo inline-flex items-center shrink-0 mt-1">
-      <img src="/assets/logo.png" alt="Prepzo" class="${h} w-auto max-w-[200px] object-contain object-left" />
+    return `<a href="${href}" class="brand-logo" style="line-height:0">
+      <img src="/assets/logo.png" alt="Prepzo" style="height:${h};width:auto;max-width:220px;object-fit:contain" />
     </a>`;
   },
 
-  navbar(links = []) {
-    const user = Api.getUser();
+  pageLoader() {
+    return `<div id="page-loader"><div class="spinner"></div><p class="text-sm text-muted">Loading Prepzo...</p></div>`;
+  },
+
+  navbar(links = [], opts = {}) {
+    const user = typeof Api !== 'undefined' ? Api.getUser() : null;
+    const linkHtml = links
+      .map((l) => `<a href="${l.href}">${l.label}</a>`)
+      .join('');
+    const authHtml = user
+      ? `<a href="/dashboard.html" class="btn-ghost btn-sm">${user.name}</a>`
+      : `<a href="/auth.html" class="btn-ghost btn-sm">Log in</a>
+         <a href="/auth.html?mode=register" class="btn-primary btn-sm">Get Started</a>`;
+
     return `
-    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--bg-primary)]/80 backdrop-blur-xl">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="/" class="brand-logo inline-flex items-center shrink-0">
-          <img src="/assets/logo.png" alt="Prepzo" class="h-9 w-auto max-w-[180px] object-contain object-left" />
-        </a>
-        <div class="hidden md:flex items-center gap-8">
-          ${links.map(l => `<a href="${l.href}" class="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] transition">${l.label}</a>`).join('')}
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="theme-toggle" data-theme-toggle title="Toggle theme">
-            <div class="theme-toggle-knob"></div>
-          </div>
-          ${user ? `
-            <a href="/dashboard.html" class="text-sm font-medium hover:text-[var(--accent)] transition">${user.name}</a>
-          ` : `
-            <a href="/auth.html" class="btn-ghost text-sm">Log in</a>
-            <a href="/auth.html?mode=register" class="btn-primary text-sm">Get Started</a>
-          `}
+    <header class="navbar">
+      <div class="navbar-inner">
+        ${Components.logo('md', '/')}
+        <nav class="nav-links">${linkHtml}</nav>
+        <div class="nav-actions">
+          <div class="theme-toggle" data-theme-toggle title="Toggle theme"><div class="theme-toggle-knob"></div></div>
+          ${authHtml}
+          <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Menu">☰</button>
         </div>
       </div>
-    </nav>`;
+      <nav class="mobile-nav" id="mobile-nav">${linkHtml}${authHtml}</nav>
+    </header>`;
   },
 
   footer() {
+    const y = new Date().getFullYear();
     return `
-    <footer class="border-t border-[var(--border)] py-16 mt-24">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid md:grid-cols-4 gap-12">
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
           <div>
             ${Components.logo('lg', '/')}
-            <p class="font-mono text-sm text-[var(--text-muted)]">Prepare. Practice. Perform.</p>
+            <p class="brand-tagline mt-4">Prepare. Practice. Perform.</p>
+            <p class="text-sm text-muted mt-4">AI-powered interview prep for top tech companies.</p>
           </div>
           <div>
             <h4 class="font-semibold mb-4">Product</h4>
-            <ul class="space-y-2 text-sm text-[var(--text-muted)]">
-              <li><a href="/dashboard.html" class="hover:text-[var(--accent)]">Dashboard</a></li>
-              <li><a href="#features" class="hover:text-[var(--accent)]">Features</a></li>
-              <li><a href="#faq" class="hover:text-[var(--accent)]">FAQ</a></li>
+            <ul class="text-sm text-muted" style="list-style:none;display:flex;flex-direction:column;gap:0.5rem">
+              <li><a href="/dashboard.html">Dashboard</a></li>
+              <li><a href="/#features">Features</a></li>
+              <li><a href="/auth.html">Sign In</a></li>
             </ul>
           </div>
           <div>
-            <h4 class="font-semibold mb-4">Companies</h4>
-            <ul class="space-y-2 text-sm text-[var(--text-muted)]">
+            <h4 class="font-semibold mb-4">Practice</h4>
+            <ul class="text-sm text-muted" style="list-style:none;display:flex;flex-direction:column;gap:0.5rem">
               <li>Google · Amazon · Microsoft</li>
               <li>Meta · Apple · Netflix</li>
             </ul>
           </div>
           <div>
             <h4 class="font-semibold mb-4">Admin</h4>
-            <a href="/admin/login.html" class="text-sm text-[var(--text-muted)] hover:text-[var(--accent)]">Admin Portal</a>
+            <a href="/admin/login.html" class="text-sm text-muted">Admin Portal →</a>
           </div>
         </div>
-        <div class="mt-12 pt-8 border-t border-[var(--border)] text-center text-sm text-[var(--text-muted)]">
-          © ${new Date().getFullYear()} Prepzo. All rights reserved.
-        </div>
+        <p class="text-center text-sm text-muted" style="padding-top:2rem;border-top:1px solid var(--border)">
+          © ${y} Prepzo. All rights reserved.
+        </p>
       </div>
     </footer>`;
   },
 
   difficultyBadge(level) {
     const cls = { Easy: 'badge-easy', Medium: 'badge-medium', Hard: 'badge-hard' }[level] || 'badge-medium';
-    return `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}">${level}</span>`;
+    return `<span class="${cls}">${level}</span>`;
   },
 
   categoryBadge(cat) {
-    return `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/15 text-indigo-400">${cat}</span>`;
+    const styles = {
+      HR: 'badge-cat',
+      Technical: 'badge-cat',
+      Behavioral: 'badge-cat',
+      DSA: 'badge-dsa',
+      'System Design': 'badge-sys',
+      Communication: 'badge-comm',
+    };
+    const cls = styles[cat] || 'badge-cat';
+    return `<span class="${cls}">${cat}</span>`;
   },
 
   companyCard(company, onClick = '') {
-    const initial = company.name.charAt(0);
+    const initial = (company.name || '?').charAt(0);
+    const logo = company.logo
+      ? `<img src="${company.logo}" alt="${company.name}" style="width:48px;height:48px;border-radius:12px;object-fit:cover">`
+      : `<div class="company-logo">${initial}</div>`;
     return `
-    <div class="glass-card p-6 cursor-pointer group" ${onClick ? `onclick="${onClick}"` : ''}>
-      <div class="flex items-center gap-4 mb-4">
-        ${company.logo
-          ? `<img src="${company.logo}" alt="${company.name}" class="w-12 h-12 rounded-xl object-cover">`
-          : `<div class="company-logo">${initial}</div>`}
+    <div class="glass-card glass-card-interactive card-pad" style="cursor:pointer" ${onClick ? `onclick="${onClick}"` : ''}>
+      <div class="flex items-center gap-4 mb-4">${logo}
         <div>
-          <h3 class="font-semibold group-hover:text-[var(--accent)] transition">${company.name}</h3>
-          <p class="text-xs text-[var(--text-muted)]">${company.question_count || 0} questions</p>
+          <h3 class="font-semibold">${company.name}</h3>
+          <p class="text-xs text-muted">${company.question_count || 0} questions</p>
         </div>
       </div>
-      <p class="text-sm text-[var(--text-muted)] line-clamp-2">${company.description || ''}</p>
+      <p class="text-sm text-muted">${company.description || 'Practice company-specific interview questions.'}</p>
     </div>`;
   },
 
   loading() {
-    return `<div class="flex justify-center py-20"><div class="spinner"></div></div>`;
+    return `<div class="flex justify-center" style="padding:4rem 0"><div class="spinner"></div></div>`;
   },
 
   toast(message, type = 'success') {
     const el = document.createElement('div');
-    el.className = `fixed bottom-6 right-6 z-[100] px-6 py-3 rounded-xl text-sm font-medium fade-in ${
-      type === 'error' ? 'bg-red-500/90 text-white' : 'bg-[var(--accent)] text-white'
-    }`;
+    el.className = `toast toast-${type}`;
     el.textContent = message;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
+    setTimeout(() => el.remove(), 3200);
+  },
+
+  dashboardSidebar(active = 'dashboard') {
+    const items = [
+      { id: 'dashboard', label: 'Dashboard', href: '/dashboard.html' },
+      { id: 'results', label: 'Results', href: '/results.html' },
+    ];
+    return `
+    <aside class="sidebar" id="app-sidebar">
+      <a href="/" class="brand-logo" style="margin-bottom:2rem;display:block">${Components.logo('md', '/').replace(/<a[^>]*>|<\/a>/g, '')}</a>
+      <nav style="flex:1;display:flex;flex-direction:column;gap:0.25rem">
+        ${items.map((i) => `<a href="${i.href}" class="sidebar-link ${active === i.id ? 'active' : ''}">${i.label}</a>`).join('')}
+      </nav>
+      <button type="button" id="logout-btn" class="sidebar-link" style="color:#f87171">Logout</button>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="AppUI.toggleSidebar(false)"></div>`;
   },
 };

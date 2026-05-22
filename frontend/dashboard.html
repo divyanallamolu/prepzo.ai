@@ -3,73 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prepzo - Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Prepzo — Dashboard</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body class="flex min-h-screen">
-  <aside class="hidden lg:flex flex-col w-64 border-r border-[var(--border)] p-6 fixed h-full">
-    <a href="/" class="brand-logo block mb-8">
-      <img src="/assets/logo.png" alt="Prepzo" class="h-9 w-auto max-w-[160px] object-contain" />
-    </a>
-    <nav class="space-y-1 flex-1">
+<body class="app-layout page-enter">
+  <div class="page-bg"><div class="gradient-orb gradient-orb-3"></div></div>
+
+  <header class="mobile-header">
+    <button type="button" onclick="AppUI.toggleSidebar(true)" aria-label="Menu" class="btn-ghost btn-sm" style="border:none">☰</button>
+    <img src="/assets/logo.png" alt="Prepzo" style="height:32px">
+    <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
+  </header>
+
+  <aside class="sidebar" id="app-sidebar">
+    <a href="/" style="display:block;margin-bottom:2rem"><img src="/assets/logo.png" alt="Prepzo" style="height:40px;width:auto"></a>
+    <nav style="flex:1;display:flex;flex-direction:column;gap:0.25rem">
       <a href="/dashboard.html" class="sidebar-link active">Dashboard</a>
-      <a href="#" id="nav-practice" class="sidebar-link">Practice</a>
       <a href="/results.html" class="sidebar-link">Results</a>
-      <a href="#" id="nav-leaderboard" class="sidebar-link">Leaderboard</a>
+      <button type="button" id="nav-leaderboard" class="sidebar-link">Leaderboard</button>
     </nav>
-    <button id="logout-btn" class="sidebar-link text-red-400">Logout</button>
+    <button type="button" id="logout-btn" class="sidebar-link" style="color:#f87171">Logout</button>
   </aside>
-  <main class="flex-1 lg:ml-64 p-6 pt-20 lg:pt-6">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="AppUI.toggleSidebar(false)"></div>
+
+  <main class="main-content" style="position:relative;z-index:1">
     <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
       <div>
         <h1 class="text-2xl font-bold">Welcome, <span id="user-name">User</span></h1>
-        <p class="text-[var(--text-muted)] text-sm">Ready to practice today?</p>
+        <p class="text-sm text-muted">Ready to practice today?</p>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3 hide-mobile">
         <div class="theme-toggle" data-theme-toggle><div class="theme-toggle-knob"></div></div>
-        <input type="search" id="search" placeholder="Search companies..." class="px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow text-sm w-48 sm:w-64">
+        <input type="search" id="search" placeholder="Search companies..." class="input" style="width:220px">
       </div>
     </header>
 
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Practice Streak</p><p id="stat-streak" class="text-3xl font-bold text-[var(--accent)]">0</p><p class="text-xs text-[var(--text-muted)]">days</p></div>
-      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Questions Done</p><p id="stat-total" class="text-3xl font-bold">0</p></div>
-      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Bookmarks</p><p id="stat-bookmarks" class="text-3xl font-bold">0</p></div>
-      <div class="glass-card p-5"><p class="text-xs text-[var(--text-muted)]">Daily Challenge</p><button id="daily-btn" class="btn-primary text-sm mt-2 w-full">Start Challenge</button></div>
+    <div class="grid grid-4 gap-4 mb-8">
+      <div class="glass-card stat-card">
+        <p class="text-xs text-muted">Practice Streak</p>
+        <p class="stat-value" id="stat-streak">0</p>
+        <p class="text-xs text-muted">days</p>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="text-xs text-muted">Questions Done</p>
+        <p class="stat-value" id="stat-total" style="color:var(--text-primary)">0</p>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="text-xs text-muted">Bookmarks</p>
+        <p class="stat-value" id="stat-bookmarks" style="color:var(--text-primary)">0</p>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="text-xs text-muted">Daily Challenge</p>
+        <button id="daily-btn" class="btn-primary btn-sm mt-2 w-full">Start Challenge</button>
+      </div>
     </div>
 
     <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-4">Are you preparing for a specific company?</h2>
-      <div class="flex gap-3 mb-6">
-        <button id="btn-yes" class="btn-primary text-sm">Yes, choose company</button>
-        <button id="btn-trending" class="btn-ghost text-sm">Show trending</button>
+      <h2 class="text-lg font-semibold mb-4">Choose a company to practice</h2>
+      <div class="flex flex-wrap gap-3 mb-6">
+        <button id="btn-yes" class="btn-primary btn-sm">All Companies</button>
+        <button id="btn-trending" class="btn-ghost btn-sm">Trending Only</button>
       </div>
-      <div id="companies-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      <div id="companies-grid" class="grid grid-4 gap-4"></div>
     </section>
 
     <section id="leaderboard-section" class="hidden mb-8">
       <h2 class="text-lg font-semibold mb-4">Leaderboard</h2>
-      <div id="leaderboard" class="glass-card p-6"></div>
+      <div id="leaderboard" class="glass-card card-pad"></div>
     </section>
 
     <section>
       <h2 class="text-lg font-semibold mb-4">Recently Practiced</h2>
-      <div id="recent-list" class="text-sm text-[var(--text-muted)]">No practice sessions yet.</div>
+      <div id="recent-list" class="text-sm text-muted">No practice sessions yet.</div>
     </section>
   </main>
+
   <script src="/js/theme.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/components.js"></script>
+  <script src="/js/app.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
-    const user = Api.getUser();
-    document.getElementById('user-name').textContent = user?.name || 'User';
-
-    document.getElementById('logout-btn').onclick = () => {
-      Api.setToken(null); Api.setUser(null);
-      location.href = '/';
-    };
+    document.getElementById('user-name').textContent = Api.getUser()?.name || 'User';
+    document.getElementById('logout-btn').onclick = () => { Api.setToken(null); Api.setUser(null); location.href = '/'; };
 
     let allCompanies = [];
 
@@ -80,7 +96,7 @@
         document.getElementById('stat-total').textContent = stats.total_practiced || 0;
         if (stats.recent_companies?.length) {
           document.getElementById('recent-list').innerHTML = stats.recent_companies.map(c =>
-            `<span class="inline-block px-3 py-1 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] mr-2 mb-2">${c}</span>`
+            `<span style="display:inline-block;padding:0.35rem 0.85rem;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin:0.25rem 0.5rem 0.25rem 0">${c}</span>`
           ).join('');
         }
       } catch {}
@@ -91,9 +107,9 @@
     }
 
     function renderCompanies(list) {
-      document.getElementById('companies-grid').innerHTML = list.map(c =>
-        Components.companyCard(c, `location.href='/interview.html?company=${c.id}&name=${encodeURIComponent(c.name)}'`)
-      ).join('');
+      document.getElementById('companies-grid').innerHTML = list.length
+        ? list.map(c => Components.companyCard(c, `location.href='/interview.html?company=${c.id}&name=${encodeURIComponent(c.name)}'`)).join('')
+        : '<p class="text-muted">No companies found.</p>';
     }
 
     async function loadCompanies(trending = false) {
@@ -101,24 +117,22 @@
         allCompanies = await Api.companies.list(trending);
         renderCompanies(allCompanies);
       } catch {
-        document.getElementById('companies-grid').innerHTML = '<p class="text-[var(--text-muted)]">Start the backend server to load companies.</p>';
+        document.getElementById('companies-grid').innerHTML = '<p class="text-muted">Start the backend server to load companies.</p>';
       }
     }
 
     document.getElementById('btn-yes').onclick = () => loadCompanies(false);
     document.getElementById('btn-trending').onclick = () => loadCompanies(true);
-    document.getElementById('search').oninput = (e) => {
+    document.getElementById('search')?.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
       renderCompanies(allCompanies.filter(c => c.name.toLowerCase().includes(q)));
-    };
-
+    });
     document.getElementById('daily-btn').onclick = async () => {
       try {
         const q = await Api.questions.daily();
         location.href = `/interview.html?company=${q.company_id}&name=${encodeURIComponent(q.company_name)}&daily=${q.id}`;
       } catch (ex) { Components.toast(ex.message, 'error'); }
     };
-
     document.getElementById('nav-leaderboard').onclick = async (e) => {
       e.preventDefault();
       const sec = document.getElementById('leaderboard-section');
@@ -127,9 +141,9 @@
         try {
           const lb = await Api.progress.leaderboard();
           document.getElementById('leaderboard').innerHTML = lb.length ? lb.map((r,i) =>
-            `<div class="flex justify-between py-2 border-b border-[var(--border)]"><span>#${i+1} ${r.name}</span><span>${r.total} questions · ${r.avg_score}% avg</span></div>`
-          ).join('') : '<p>No data yet</p>';
-        } catch { document.getElementById('leaderboard').innerHTML = '<p>Leaderboard unavailable</p>'; }
+            `<div class="flex justify-between py-3" style="border-bottom:1px solid var(--border)"><span class="font-medium">#${i+1} ${r.name}</span><span class="text-muted text-sm">${r.total} Q · ${r.avg_score}% avg</span></div>`
+          ).join('') : '<p class="text-muted">No leaderboard data yet.</p>';
+        } catch { document.getElementById('leaderboard').innerHTML = '<p class="text-muted">Leaderboard unavailable</p>'; }
       }
     };
 

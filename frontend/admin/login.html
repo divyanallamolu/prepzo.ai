@@ -3,33 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prepzo Admin Login</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Prepzo — Admin Login</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
-  <div class="gradient-orb gradient-orb-1"></div>
-  <div class="glass-card p-8 w-full max-w-md relative z-10">
-    <a href="/" class="brand-logo block mb-4">
-      <img src="/assets/logo.png" alt="Prepzo" class="h-12 w-auto max-w-[200px] object-contain mx-auto" />
+<body class="min-h-screen flex items-center justify-center p-6 page-enter">
+  <div class="page-bg"><div class="gradient-orb gradient-orb-1"></div></div>
+  <div class="glass-card card-pad w-full max-w-md" style="position:relative;z-index:1">
+    <a href="/" class="brand-logo" style="display:block;text-align:center;margin-bottom:1rem">
+      <img src="/assets/logo.png" alt="Prepzo" style="height:48px;width:auto;margin:0 auto">
     </a>
-    <p class="text-xs text-[var(--accent)] font-semibold text-center mb-2 tracking-wide">ADMIN LOGIN</p>
-    <p class="text-sm text-[var(--text-muted)] mb-8">Secure admin access only</p>
-    <form id="admin-form" class="space-y-4">
-      <input type="email" id="email" required placeholder="admin@prepzo.ai" class="w-full px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow">
-      <input type="password" id="password" required placeholder="Password" class="w-full px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] input-glow">
-      <p id="error" class="text-red-400 text-sm hidden"></p>
+    <p class="text-xs text-accent font-semibold text-center mb-2" style="letter-spacing:0.1em">ADMIN LOGIN</p>
+    <p class="text-sm text-muted text-center mb-8">Secure admin access only</p>
+    <form id="admin-form">
+      <div class="mb-4">
+        <label class="label" for="email">Email</label>
+        <input type="email" id="email" required class="input" placeholder="admin@prepzo.ai">
+      </div>
+      <div class="mb-4">
+        <label class="label" for="password">Password</label>
+        <input type="password" id="password" required class="input" placeholder="Password">
+      </div>
+      <p id="error" class="text-sm hidden mb-4" style="color:#f87171"></p>
       <button type="submit" class="btn-primary w-full">Admin Sign In</button>
     </form>
-    <a href="/" class="block mt-4 text-center text-sm text-[var(--text-muted)]">Back to site</a>
+    <a href="/" class="block mt-6 text-center text-sm text-muted">← Back to site</a>
   </div>
   <script src="/js/theme.js"></script>
   <script src="/js/api.js"></script>
   <script>
-    if (typeof Api === 'undefined') {
-      document.getElementById('error').textContent = 'Scripts failed to load. Press Ctrl+F5.';
-      document.getElementById('error').classList.remove('hidden');
-    }
     document.getElementById('admin-form').onsubmit = async (e) => {
       e.preventDefault();
       try {
@@ -39,14 +40,14 @@
         });
         Api.setToken(res.token, 'admin');
         Api.setUser(res.user, 'admin');
-        location.href = '/admin/';
+        window.location.replace('/admin/');
       } catch (ex) {
         const err = document.getElementById('error');
         err.textContent = ex.message;
         err.classList.remove('hidden');
       }
     };
-    if (typeof Api !== 'undefined' && Api.getToken('admin')) location.href = '/admin/';
+    if (Api.getToken('admin')) window.location.replace('/admin/');
   </script>
 </body>
 </html>

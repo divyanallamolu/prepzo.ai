@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Prepzo — AI interview preparation. Practice company-specific questions with NLP answer scoring.">
+  <title>Prepzo — Prepare. Practice. Perform.</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="page-enter">
+  <div class="page-bg">
+    <div class="grid-pattern"></div>
+    <div class="gradient-orb gradient-orb-1"></div>
+    <div class="gradient-orb gradient-orb-2"></div>
+    <div class="gradient-orb gradient-orb-3"></div>
+  </div>
+
+  <div id="page-loader"><div class="spinner"></div><p class="text-sm text-muted">Loading Prepzo...</p></div>
+
+  <div style="position:relative;z-index:1">
+    <div id="navbar"></div>
+
+    <section class="hero container">
+      <div class="hero-badge fade-in">✦ AI-Powered Interview Prep</div>
+      <h1 class="fade-in-up stagger-1">
+        Land your dream role with <span class="gradient-text">Prepzo</span>
+      </h1>
+      <p class="hero-sub fade-in-up stagger-2">
+        Company-specific questions, timed practice rooms, and instant NLP feedback — built for serious candidates.
+      </p>
+      <div class="hero-cta fade-in-up stagger-3">
+        <a href="/auth.html?mode=register" class="btn-primary">Start Practicing Free</a>
+        <a href="#features" class="btn-ghost">See Features</a>
+      </div>
+      <div class="hero-stats fade-in-up stagger-4">
+        <div class="hero-stat"><strong>10+</strong><span class="text-sm text-muted">Top Companies</span></div>
+        <div class="hero-stat"><strong>AI</strong><span class="text-sm text-muted">Answer Scoring</span></div>
+        <div class="hero-stat"><strong>3 min</strong><span class="text-sm text-muted">Timed Practice</span></div>
+      </div>
+    </section>
+
+    <section class="container mt-16 reveal">
+      <p class="text-center text-sm text-muted mb-6">Trusted by candidates preparing for</p>
+      <div class="logo-strip" id="company-strip">
+        <span>Google</span><span>Amazon</span><span>Microsoft</span>
+        <span>Meta</span><span>Apple</span><span>Netflix</span>
+      </div>
+    </section>
+
+    <section id="features" class="container mt-16" style="padding:4rem 0">
+      <p class="section-label text-center reveal">Features</p>
+      <h2 class="section-title text-center reveal">Everything you need to ace interviews</h2>
+      <p class="text-center text-muted mb-8 reveal" style="max-width:520px;margin:0 auto 3rem">
+        From timed practice to AI evaluation — one platform for end-to-end prep.
+      </p>
+      <div class="grid grid-3 gap-6">
+        <div class="glass-card card-pad reveal">
+          <div class="feature-icon">🎯</div>
+          <h3 class="font-semibold text-lg mb-2">Company-Specific Prep</h3>
+          <p class="text-sm text-muted">Practice real interview questions tailored to Google, Amazon, Microsoft, and more.</p>
+        </div>
+        <div class="glass-card card-pad reveal">
+          <div class="feature-icon">⏱️</div>
+          <h3 class="font-semibold text-lg mb-2">Timed Interview Room</h3>
+          <p class="text-sm text-muted">3-minute countdown mirrors real pressure. Think first, then reveal the ideal answer.</p>
+        </div>
+        <div class="glass-card card-pad reveal">
+          <div class="feature-icon">🤖</div>
+          <h3 class="font-semibold text-lg mb-2">AI Answer Evaluation</h3>
+          <p class="text-sm text-muted">NLP scores your response on content similarity and communication clarity.</p>
+        </div>
+        <div class="glass-card card-pad reveal">
+          <div class="feature-icon">🎤</div>
+          <h3 class="font-semibold text-lg mb-2">Voice Input</h3>
+          <p class="text-sm text-muted">Answer aloud using browser speech recognition — practice like the real thing.</p>
+        </div>
+        <div class="glass-card card-pad reveal">
+          <div class="feature-icon">📊</div>
+          <h3 class="font-semibold text-lg mb-2">Progress Analytics</h3>
+          <p class="text-sm text-muted">Track streaks, scores, bookmarks, and leaderboard rankings over time.</p>
+        </div>
+        <div class="glass-card card-pad reveal">
+          <div class="feature-icon">🔖</div>
+          <h3 class="font-semibold text-lg mb-2">Bookmarks & Daily Challenge</h3>
+          <p class="text-sm text-muted">Save tough questions and take a new daily challenge every session.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="companies" class="container reveal" style="padding:3rem 0">
+      <p class="section-label text-center">Companies</p>
+      <h2 class="section-title text-center">Practice for your target company</h2>
+      <div id="companies-preview" class="grid grid-4 gap-4 mt-8"></div>
+      <p class="text-center mt-8">
+        <a href="/auth.html?mode=register" class="btn-primary">View All Companies →</a>
+      </p>
+    </section>
+
+    <section class="container reveal" style="padding:3rem 0">
+      <p class="section-label text-center">Testimonials</p>
+      <h2 class="section-title text-center">Loved by interview candidates</h2>
+      <div class="grid grid-3 gap-6 mt-8">
+        <div class="glass-card testimonial-card">
+          <blockquote>"Prepzo's timed rooms felt exactly like my Google onsite. The AI feedback on my STAR answers was spot-on."</blockquote>
+          <div class="testimonial-author">
+            <div class="avatar">RK</div>
+            <div><strong>Priya K.</strong><br><span class="text-xs text-muted">Software Engineer → Google</span></div>
+          </div>
+        </div>
+        <div class="glass-card testimonial-card">
+          <blockquote>"I uploaded 50 Amazon questions via bulk CSV in the admin panel. My team uses this for campus prep now."</blockquote>
+          <div class="testimonial-author">
+            <div class="avatar">AM</div>
+            <div><strong>Alex M.</strong><br><span class="text-xs text-muted">Career Coach</span></div>
+          </div>
+        </div>
+        <div class="glass-card testimonial-card">
+          <blockquote>"The communication score pushed me to structure answers better. Went from 62% to 89% similarity in two weeks."</blockquote>
+          <div class="testimonial-author">
+            <div class="avatar">SJ</div>
+            <div><strong>Sam J.</strong><br><span class="text-xs text-muted">New Grad → Microsoft</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container reveal" style="padding:3rem 0 5rem">
+      <div class="cta-banner">
+        <h2 class="text-2xl font-bold mb-4">Ready to ace your next interview?</h2>
+        <p class="text-muted mb-6" style="max-width:480px;margin:0 auto 1.5rem">Join Prepzo today. Free to start — practice smarter with AI feedback.</p>
+        <a href="/auth.html?mode=register" class="btn-primary">Create Free Account</a>
+      </div>
+    </section>
+
+    <div id="footer"></div>
+  </div>
+
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('navbar').innerHTML = Components.navbar([
+      { href: '#features', label: 'Features' },
+      { href: '#companies', label: 'Companies' },
+      { href: '/auth.html', label: 'Sign In' },
+    ]);
+    document.getElementById('footer').innerHTML = Components.footer();
+
+    (async function loadCompanies() {
+      const el = document.getElementById('companies-preview');
+      try {
+        const list = await Api.companies.list(true);
+        const show = (list.length ? list : []).slice(0, 8);
+        if (!show.length) {
+          el.innerHTML = '<p class="text-center text-muted col-span-full">Sign in to explore company-specific questions.</p>';
+          return;
+        }
+        el.innerHTML = show.map(c => Components.companyCard(c, '')).join('');
+      } catch {
+        el.innerHTML = '<p class="text-center text-muted">Start the server to load companies, or <a href="/auth.html" class="text-accent">sign in</a>.</p>';
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -102,6 +102,13 @@ var Api = {
     charts: () => Api.request('/analytics/charts', { role: 'admin' }),
   },
 
+  timer: {
+    /** Resolved settings for interview (company + difficulty) */
+    get: (query = '') => Api.request(`/timer/settings${query}`),
+    getAdmin: () => Api.request('/timer/settings/admin', { role: 'admin' }),
+    saveAdmin: (body) => Api.request('/timer/settings/admin', { method: 'PUT', body, role: 'admin' }),
+  },
+
   admin: {
     createCompany: (formData) => Api.formRequest('/companies', formData),
     updateCompany: (id, formData) => {
@@ -129,9 +136,9 @@ function requireAuth(redirect = '/auth.html') {
   return true;
 }
 
-function requireAdmin() {
+function requireAdmin(redirect = '/admin/login.html') {
   if (!Api.getToken('admin')) {
-    window.location.href = '/admin/login.html';
+    window.location.replace(redirect);
     return false;
   }
   return true;

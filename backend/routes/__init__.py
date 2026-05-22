@@ -5,6 +5,7 @@ from routes.evaluate import evaluate_bp
 from routes.feedback import feedback_bp
 from routes.progress import progress_bp
 from routes.questions import questions_bp
+from routes.timer_settings import timer_bp
 from routes.users import users_bp
 
 ALL_BLUEPRINTS = (
@@ -16,6 +17,7 @@ ALL_BLUEPRINTS = (
     feedback_bp,
     users_bp,
     analytics_bp,
+    timer_bp,
 )
 
 

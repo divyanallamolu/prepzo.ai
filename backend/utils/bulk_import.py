@@ -5,7 +5,7 @@ from typing import Any
 
 
 VALID_DIFFICULTIES = {"Easy", "Medium", "Hard"}
-VALID_CATEGORIES = {"HR", "Technical", "Behavioral"}
+VALID_CATEGORIES = {"HR", "Technical", "Behavioral", "DSA", "System Design", "Communication"}
 
 
 def normalize_difficulty(value: str) -> str:
@@ -14,8 +14,21 @@ def normalize_difficulty(value: str) -> str:
 
 
 def normalize_category(value: str) -> str:
-    c = (value or "Technical").strip().title()
-    return c if c in VALID_CATEGORIES else "Technical"
+    raw = (value or "Technical").strip()
+    # Preserve multi-word categories
+    mapping = {
+        "dsa": "DSA",
+        "system design": "System Design",
+        "communication": "Communication",
+        "hr": "HR",
+        "technical": "Technical",
+        "behavioral": "Behavioral",
+    }
+    key = raw.lower()
+    if key in mapping:
+        return mapping[key]
+    titled = raw.title()
+    return titled if titled in VALID_CATEGORIES else "Technical"
 
 
 def parse_csv_text(text: str) -> list[dict[str, Any]]:
