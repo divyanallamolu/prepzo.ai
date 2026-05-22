@@ -26,6 +26,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Vercel build artifacts
+frontend/api/_backend/
+frontend/api/ml/
+frontend/api/database/
+
 # Vercel
 .vercel
 
