@@ -1,50 +1,17 @@
-﻿import logging
+﻿"""Authentication — register, login, admin login."""
+import logging
+from datetime import datetime, timezone
 
 import bcrypt
-from bson import ObjectId
-from flask import Blueprint, current_app, jsonify, request
-
+from flask import Blueprint, jsonify, request
 from pymongo.errors import PyMongoError
 
-from extensions import get_db, get_db_mode
-from utils.env_check import format_exception, missing_required_env
+from extensions import DatabaseUnavailableError, get_db
+from utils.env_check import missing_env
 from utils.jwt_utils import create_token
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 logger = logging.getLogger("prepzo.auth")
-
-
-def _config_error_response():
-    missing = missing_required_env()
-    if not missing:
-        return None
-    logger.error("Auth blocked — missing env vars: %s", ", ".join(missing))
-    return (
-        jsonify({
-            "error": "Server configuration incomplete",
-            "missing_env": missing,
-            "hint": "Set MONGO_URI, JWT_SECRET_KEY, and FLASK_SECRET_KEY in Vercel project settings.",
-        }),
-        503,
-    )
-
-
-def _db_error(message: str = "Database unavailable"):
-    logger.error("Database error: %s (mode=%s)", message, get_db_mode())
-    return jsonify({"error": message, "database_mode": get_db_mode()}), 503
-
-
-def _server_error(exc: Exception, action: str):
-    tb = format_exception(exc)
-    logger.error("Auth %s failed:\n%s", action, tb)
-    current_app.logger.error("Auth %s failed:\n%s", action, tb)
-    return (
-        jsonify({
-            "error": f"Unable to complete {action}",
-            "detail": str(exc)[:200],
-        }),
-        500,
-    )
 
 
 def _serialize_user(doc: dict) -> dict:
@@ -57,17 +24,25 @@ def _serialize_user(doc: dict) -> dict:
     }
 
 
-def _token_string(token) -> str:
-    if isinstance(token, bytes):
-        return token.decode("utf-8")
-    return str(token)
+def _token_str(token) -> str:
+    return token.decode("utf-8") if isinstance(token, bytes) else str(token)
+
+
+def _config_block():
+    missing = missing_env()
+    if not missing:
+        return None
+    return jsonify({
+        "error": "Server configuration incomplete",
+        "missing_env": missing,
+    }), 503
 
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    cfg_err = _config_error_response()
-    if cfg_err:
-        return cfg_err
+    blocked = _config_block()
+    if blocked:
+        return blocked
 
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
@@ -79,14 +54,10 @@ def register():
 
     try:
         db = get_db()
-        logger.info("Register attempt for %s (db_mode=%s)", email, get_db_mode())
-
         if db.users.find_one({"email": email}):
             return jsonify({"error": "Email already registered"}), 409
 
         hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        from datetime import datetime, timezone
-
         user = {
             "name": name,
             "email": email,
@@ -97,28 +68,25 @@ def register():
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         result = db.users.insert_one(user)
-        user_id = str(result.inserted_id)
-        token = _token_string(create_token(user_id, "user"))
-
-        logger.info("Register success for %s (id=%s)", email, user_id)
-        return (
-            jsonify({
-                "token": token,
-                "user": _serialize_user({**user, "_id": result.inserted_id}),
-            }),
-            201,
-        )
+        token = _token_str(create_token(str(result.inserted_id), "user"))
+        logger.info("Registered user %s", email)
+        return jsonify({"token": token, "user": _serialize_user({**user, "_id": result.inserted_id})}), 201
+    except DatabaseUnavailableError as exc:
+        logger.error("Register DB unavailable: %s", exc)
+        return jsonify({"error": "Database unavailable", "detail": str(exc)[:200]}), 503
     except PyMongoError as exc:
-        return _db_error(str(exc))
+        logger.exception("Register MongoDB error")
+        return jsonify({"error": "Database error", "detail": str(exc)[:200]}), 503
     except Exception as exc:
-        return _server_error(exc, "registration")
+        logger.exception("Register failed")
+        return jsonify({"error": "Registration failed", "detail": str(exc)[:200]}), 500
 
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    cfg_err = _config_error_response()
-    if cfg_err:
-        return cfg_err
+    blocked = _config_block()
+    if blocked:
+        return blocked
 
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
@@ -129,32 +97,29 @@ def login():
 
     try:
         db = get_db()
-        logger.info("Login attempt for %s (db_mode=%s)", email, get_db_mode())
-
         user = db.users.find_one({"email": email})
-        if not user:
+        stored = (user or {}).get("password") or ""
+        if not user or not stored or not bcrypt.checkpw(password.encode("utf-8"), stored.encode("utf-8")):
             return jsonify({"error": "Invalid credentials"}), 401
 
-        stored = user.get("password") or ""
-        if not stored or not bcrypt.checkpw(
-            password.encode("utf-8"), stored.encode("utf-8")
-        ):
-            return jsonify({"error": "Invalid credentials"}), 401
-
-        token = _token_string(create_token(str(user["_id"]), user.get("role", "user")))
-        logger.info("Login success for %s", email)
+        token = _token_str(create_token(str(user["_id"]), user.get("role", "user")))
+        logger.info("Login success %s", email)
         return jsonify({"token": token, "user": _serialize_user(user)}), 200
+    except DatabaseUnavailableError as exc:
+        return jsonify({"error": "Database unavailable", "detail": str(exc)[:200]}), 503
     except PyMongoError as exc:
-        return _db_error(str(exc))
+        logger.exception("Login MongoDB error")
+        return jsonify({"error": "Database error", "detail": str(exc)[:200]}), 503
     except Exception as exc:
-        return _server_error(exc, "login")
+        logger.exception("Login failed")
+        return jsonify({"error": "Login failed", "detail": str(exc)[:200]}), 500
 
 
 @auth_bp.route("/admin/login", methods=["POST"])
 def admin_login():
-    cfg_err = _config_error_response()
-    if cfg_err:
-        return cfg_err
+    blocked = _config_block()
+    if blocked:
+        return blocked
 
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
@@ -163,18 +128,16 @@ def admin_login():
     try:
         db = get_db()
         user = db.users.find_one({"email": email, "role": "admin"})
-        if not user:
+        stored = (user or {}).get("password") or ""
+        if not user or not stored or not bcrypt.checkpw(password.encode("utf-8"), stored.encode("utf-8")):
             return jsonify({"error": "Invalid admin credentials"}), 401
 
-        stored = user.get("password") or ""
-        if not stored or not bcrypt.checkpw(
-            password.encode("utf-8"), stored.encode("utf-8")
-        ):
-            return jsonify({"error": "Invalid admin credentials"}), 401
-
-        token = _token_string(create_token(str(user["_id"]), "admin"))
+        token = _token_str(create_token(str(user["_id"]), "admin"))
         return jsonify({"token": token, "user": _serialize_user(user)}), 200
+    except DatabaseUnavailableError as exc:
+        return jsonify({"error": "Database unavailable", "detail": str(exc)[:200]}), 503
     except PyMongoError as exc:
-        return _db_error(str(exc))
+        return jsonify({"error": "Database error", "detail": str(exc)[:200]}), 503
     except Exception as exc:
-        return _server_error(exc, "admin login")
+        logger.exception("Admin login failed")
+        return jsonify({"error": "Login failed", "detail": str(exc)[:200]}), 500

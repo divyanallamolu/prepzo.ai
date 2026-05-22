@@ -1,5 +1,7 @@
-﻿import logging
+﻿"""MongoDB Atlas connection — production only (no mocks)."""
+import logging
 import os
+import time
 from urllib.parse import urlparse
 
 from pymongo import MongoClient
@@ -10,13 +12,18 @@ logger = logging.getLogger("prepzo.db")
 
 _client: MongoClient | None = None
 _db: Database | None = None
-_db_mode: str = "unknown"
-_db_error: str | None = None
+_connected: bool = False
+_last_error: str | None = None
 DEFAULT_DB_NAME = "prepzo"
+MAX_RETRIES = 3
+RETRY_DELAY_SEC = 1.5
 
 
-def _database_name_from_uri(uri: str) -> str:
-    """Extract DB name from Mongo URI; default prepzo for Atlas URIs without path."""
+class DatabaseUnavailableError(Exception):
+    """Raised when MongoDB is not connected."""
+
+
+def database_name_from_uri(uri: str) -> str:
     try:
         path = urlparse(uri).path.strip("/")
         if path:
@@ -27,91 +34,77 @@ def _database_name_from_uri(uri: str) -> str:
 
 
 def init_db(uri: str) -> Database:
-    global _client, _db, _db_mode, _db_error
+    """Connect to MongoDB Atlas with retries. Raises on failure."""
+    global _client, _db, _connected, _last_error
 
     uri = (uri or "").strip()
     if not uri:
-        _db_error = "MONGO_URI is empty"
-        logger.warning("%s — using in-memory database", _db_error)
-        return _init_memory_db()
+        _last_error = "MONGO_URI environment variable is not set"
+        logger.error(_last_error)
+        raise ConfigurationError(_last_error)
 
-    db_name = _database_name_from_uri(uri)
-    is_srv = uri.startswith("mongodb+srv://")
-
-    if is_srv:
+    if uri.startswith("mongodb+srv://"):
         try:
-            import dns  # noqa: F401 — required for mongodb+srv
+            import dns  # noqa: F401
+        except ImportError as exc:
+            raise ConfigurationError(
+                "dnspython is required for mongodb+srv URIs. Install: pip install dnspython"
+            ) from exc
 
-            logger.info("dnspython available for mongodb+srv")
-        except ImportError:
-            _db_error = 'dnspython not installed (required for mongodb+srv://). pip install dnspython'
-            logger.error(_db_error)
-            return _init_memory_db()
-
-    kwargs: dict = {"serverSelectionTimeoutMS": 10000, "connectTimeoutMS": 10000}
+    db_name = database_name_from_uri(uri)
+    client_kwargs: dict = {
+        "serverSelectionTimeoutMS": 15000,
+        "connectTimeoutMS": 15000,
+        "retryWrites": True,
+    }
     try:
         import certifi
 
-        kwargs["tlsCAFile"] = certifi.where()
+        client_kwargs["tlsCAFile"] = certifi.where()
     except ImportError:
         pass
 
-    try:
-        _client = MongoClient(uri, **kwargs)
-        _client.admin.command("ping")
-        _db = _client[db_name]
-        _db.command("ping")
-        _db_mode = "mongodb"
-        _db_error = None
-        logger.info("MongoDB connected (database=%s, srv=%s)", db_name, is_srv)
-        return _db
-    except (PyMongoError, ConfigurationError, OSError, Exception) as exc:
-        _db_error = str(exc)
-        logger.error("MongoDB connection failed: %s", _db_error)
-        logger.error("MongoDB traceback:\n%s", format_exception(exc))
-        return _init_memory_db()
+    last_exc: Exception | None = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            _client = MongoClient(uri, **client_kwargs)
+            _client.admin.command("ping")
+            _db = _client[db_name]
+            _db.command("ping")
+            _connected = True
+            _last_error = None
+            logger.info("MongoDB Atlas connected (db=%s, attempt=%s)", db_name, attempt)
+            return _db
+        except (PyMongoError, ConfigurationError, OSError) as exc:
+            last_exc = exc
+            _last_error = str(exc)
+            logger.warning("MongoDB connection attempt %s/%s failed: %s", attempt, MAX_RETRIES, exc)
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY_SEC)
 
-
-def format_exception(exc: BaseException) -> str:
-    import traceback
-
-    return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-
-
-def _init_memory_db() -> Database:
-    global _client, _db, _db_mode
-
-    import mongomock
-
-    _client = mongomock.MongoClient()
-    _db = _client[DEFAULT_DB_NAME]
-    _db_mode = "memory"
-    logger.warning("Using in-memory database (data resets each serverless cold start)")
-    return _db
+    _connected = False
+    _db = None
+    _client = None
+    raise DatabaseUnavailableError(_last_error or "MongoDB connection failed") from last_exc
 
 
 def get_db() -> Database:
-    if _db is None:
-        uri = os.environ.get("MONGO_URI", "")
-        return init_db(uri)
+    if _db is None or not _connected:
+        raise DatabaseUnavailableError(_last_error or "MongoDB is not connected")
     return _db
 
 
-def get_db_mode() -> str:
-    return _db_mode
+def is_connected() -> bool:
+    return _connected and _db is not None
 
 
-def get_db_error() -> str | None:
-    return _db_error
+def get_last_error() -> str | None:
+    return _last_error
 
 
-def ping_database() -> tuple[bool, str]:
-    """Return (ok, message) for health/debug."""
+def ping() -> tuple[bool, str]:
     try:
-        db = get_db()
-        db.command("ping")
-        if _db_mode == "mongodb":
-            return True, "MongoDB Atlas connected"
-        return True, "In-memory database (MongoDB unavailable)"
+        get_db().command("ping")
+        return True, "MongoDB Atlas connected"
     except Exception as exc:
         return False, str(exc)

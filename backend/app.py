@@ -1,16 +1,18 @@
+"""Prepzo Flask API application."""
+import logging
 import os
 import sys
 
-from flask import Flask, Response, abort, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
 from config import Config
-from extensions import get_db_mode, init_db
+from extensions import DatabaseUnavailableError, init_db
 from routes import register_blueprints
-from utils.dev_seed import seed_if_empty
+from utils.env_check import env_flags, missing_env
 
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BACKEND_DIR, ".."))
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
 
 if BACKEND_DIR not in sys.path:
@@ -18,137 +20,89 @@ if BACKEND_DIR not in sys.path:
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-TEXT_EXTENSIONS = {".html", ".css", ".js", ".json", ".svg", ".txt"}
-MIME_TYPES = {
-    ".html": "text/html; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".js": "application/javascript; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".svg": "image/svg+xml; charset=utf-8",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".webp": "image/webp",
-    ".ico": "image/x-icon",
-}
 
-
-def create_app():
+def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config["JSON_AS_ASCII"] = False
 
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+
     CORS(
         app,
         resources={r"/api/*": {"origins": "*"}},
-        supports_credentials=False,
         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     )
 
     @app.before_request
-    def handle_preflight():
+    def cors_preflight():
         if request.method == "OPTIONS" and request.path.startswith("/api"):
             return Response(status=204)
 
     @app.after_request
-    def add_cors_headers(response):
+    def cors_headers(response):
         if request.path.startswith("/api"):
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
         return response
 
-    import logging
-
-    from utils.env_check import log_startup_diagnostics
-
-    logging.basicConfig(level=logging.INFO)
-
-    init_db(app.config["MONGO_URI"])
-    mode = get_db_mode()
-    if mode == "mongodb":
-        app.logger.info("Connected to MongoDB Atlas")
+    missing = Config.validate()
+    if missing:
+        app.logger.warning("Missing environment variables: %s", ", ".join(missing))
     else:
-        from extensions import get_db
         try:
-            seed_if_empty(get_db())
-        except Exception as seed_exc:
-            app.logger.error("Dev seed failed (non-fatal): %s", seed_exc)
-        app.logger.warning("MongoDB unavailable — using in-memory database")
-
-    log_startup_diagnostics(app.logger)
-    print("Prepzo API running successfully on Vercel", flush=True)
+            init_db(app.config["MONGO_URI"])
+            app.logger.info("Prepzo API ready — MongoDB Atlas connected")
+        except Exception as exc:
+            app.logger.error("MongoDB initialization failed: %s", exc)
 
     register_blueprints(app)
 
-    @app.errorhandler(Exception)
-    def handle_unhandled_exception(err):
+    @app.errorhandler(DatabaseUnavailableError)
+    def handle_db_unavailable(err):
+        return jsonify({"error": "Database unavailable", "detail": str(err)[:300]}), 503
+
+    @app.errorhandler(404)
+    def handle_not_found(err):
         if request.path.startswith("/api"):
-            app.logger.error("Unhandled API error on %s: %s", request.path, err, exc_info=True)
+            return jsonify({"error": "Not found"}), 404
+        return err
+
+    @app.errorhandler(Exception)
+    def handle_exception(err):
+        if request.path.startswith("/api"):
+            app.logger.exception("Unhandled error on %s", request.path)
             return jsonify({"error": "Internal server error", "detail": str(err)[:200]}), 500
         raise err
 
-    @app.route("/uploads/logos/<path:filename>")
-    def serve_logo(filename):
-        return send_from_directory(Config.UPLOAD_FOLDER, filename)
-
-    @app.route("/")
-    def home():
-        return _serve_frontend("index.html")
-
-    @app.route("/auth.html")
-    def auth_page():
-        return _serve_frontend("auth.html")
-
-    @app.route("/admin")
-    @app.route("/admin/")
-    def admin_home():
-        return _serve_frontend("admin/index.html")
-
-    @app.route("/<path:filename>")
-    def frontend_files(filename):
-        if filename.startswith("api/"):
-            return jsonify({"error": "Not found"}), 404
-        return _serve_frontend(filename)
+    if not os.environ.get("VERCEL"):
+        _register_local_frontend(app)
 
     return app
 
 
-def _serve_frontend(rel_path: str):
-    rel_path = rel_path.replace("\\", "/").lstrip("/")
-    if ".." in rel_path.split("/"):
-        abort(404)
+def _register_local_frontend(app: Flask):
+    """Serve static frontend when running locally (not on Vercel)."""
+    from flask import abort, send_from_directory
 
-    if rel_path in ("", "admin", "admin/"):
-        rel_path = "admin/index.html"
+    @app.route("/")
+    def home():
+        return send_from_directory(FRONTEND_DIR, "index.html")
 
-    full_path = os.path.join(FRONTEND_DIR, rel_path)
-    if os.path.isdir(full_path):
-        index_path = os.path.join(full_path, "index.html")
-        if os.path.isfile(index_path):
-            rel_path = f"{rel_path.rstrip('/')}/index.html"
-            full_path = index_path
-        else:
+    @app.route("/<path:path>")
+    def static_files(path):
+        if path.startswith("api/"):
             abort(404)
-
-    if not os.path.isfile(full_path):
+        full = os.path.join(FRONTEND_DIR, path)
+        if os.path.isfile(full):
+            return send_from_directory(FRONTEND_DIR, path)
+        if path.endswith(".html") or "." not in os.path.basename(path):
+            candidate = path if path.endswith(".html") else f"{path}.html"
+            if os.path.isfile(os.path.join(FRONTEND_DIR, candidate)):
+                return send_from_directory(FRONTEND_DIR, candidate)
         abort(404)
-
-    ext = os.path.splitext(rel_path)[1].lower()
-    mimetype = MIME_TYPES.get(ext, "application/octet-stream")
-
-    if ext in TEXT_EXTENSIONS:
-        raw = open(full_path, "rb").read()
-        if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
-            content = raw.decode("utf-16")
-        elif b"\x00" in raw[: min(200, len(raw))]:
-            content = raw.decode("utf-16-le")
-        else:
-            content = raw.decode("utf-8-sig")
-        return Response(content, mimetype=mimetype)
-
-    return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path), mimetype=mimetype)
 
 
 app = create_app()
@@ -156,6 +110,5 @@ app = create_app()
 
 if __name__ == "__main__":
     os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-    print(f"Prepzo running at http://127.0.0.1:5000")
-    print(f"Frontend: {FRONTEND_DIR}")
+    print("Prepzo local server: http://127.0.0.1:5000")
     app.run(host="127.0.0.1", port=5000, debug=True)

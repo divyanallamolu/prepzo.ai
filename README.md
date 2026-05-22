@@ -1,74 +1,253 @@
+<div align="center">
+
 # Prepzo
 
-**Prepare. Practice. Perform.**
+### Prepare · Practice · Perform
 
-AI interview prep with company-specific questions, timed rooms, NLP scoring, and admin panel.
+**AI-powered interview preparation platform** — company-specific question banks, timed mock interviews, ML answer scoring, and analytics.
 
-Stack: **HTML + CSS + vanilla JS** frontend, **Flask** backend, **MongoDB**, **scikit-learn** ML.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
+[![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://prepzo-ai.vercel.app)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-## Quick start (local)
+[Live Demo](https://prepzo-ai.vercel.app) · [Features](#features) · [Architecture](#architecture) · [API](#api-overview) · [Deploy](#deployment)
+
+</div>
+
+---
+
+## Overview
+
+Prepzo is a **full-stack AI interview prep SaaS** built for candidates targeting top tech and consulting companies. Practice with realistic timers, company-filtered questions, and instant ML feedback — all in a premium dark UI with zero framework bloat on the frontend.
+
+| | |
+|---|---|
+| **Target users** | Job seekers preparing for FAANG, IT services, and product companies |
+| **Core value** | Company-wise prep, timed interviews, AI scoring, progress analytics |
+| **Production DB** | MongoDB Atlas only |
+| **Deployment** | Vercel (static frontend + Python serverless API) |
+
+---
+
+## Features
+
+### Interview experience
+- **Company-wise preparation** — Amazon, Google, Microsoft, and 20+ employers
+- **Mixed companies mode** — random cross-company practice
+- **Professional timer system** — mandatory prep phase, difficulty-based answer limits, 30-minute session cap
+- **No answer spoilers** — ideal answers only after submission
+
+### AI & analytics
+- **ML answer evaluation** — TF-IDF content match, communication, grammar, confidence scores
+- **Score breakdown charts** — visual feedback after each answer
+- **Dashboard & results** — streaks, progress, leaderboards, time analytics
+
+### Platform
+- **JWT authentication** — register, login, secure API access
+- **Admin panel** — companies, questions, bulk upload, timer settings, users
+- **MongoDB Atlas** — scalable, production-grade persistence
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | HTML5, CSS3, Vanilla JavaScript (no React/Tailwind CDN) |
+| Backend | Flask 3, modular blueprints, REST JSON API |
+| Database | MongoDB Atlas via PyMongo |
+| ML | scikit-learn TF-IDF + heuristic scoring |
+| Auth | JWT (PyJWT), bcrypt |
+| Deploy | Vercel — `@vercel/python` + static frontend |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client
+        UI[frontend/ static UI]
+    end
+    subgraph Vercel
+        WSGI[backend/wsgi.py]
+        API[Flask API]
+    end
+    subgraph Data
+        Atlas[(MongoDB Atlas)]
+    end
+    subgraph ML
+        EV[ml/evaluator.py]
+    end
+    UI -->|/api/*| WSGI
+    WSGI --> API
+    API --> Atlas
+    API --> EV
+```
+
+---
+
+## Folder structure
+
+```
+prepzo/
+├── frontend/          # Static UI (landing, auth, dashboard, interview, admin)
+│   ├── css/
+│   ├── js/
+│   ├── admin/
+│   └── assets/
+├── backend/           # Flask API
+│   ├── app.py         # Application factory
+│   ├── wsgi.py        # Vercel entry point
+│   ├── config.py
+│   ├── extensions.py  # MongoDB connection
+│   ├── routes/        # API blueprints
+│   └── utils/
+├── database/          # Seed scripts + question bank JSON
+├── ml/                # Answer evaluator
+├── requirements.txt
+├── vercel.json
+├── .env.example
+└── README.md
+```
+
+---
+
+## API overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Service & MongoDB status |
+| `POST` | `/api/auth/register` | Create account → `201` |
+| `POST` | `/api/auth/login` | Sign in → `200` |
+| `GET` | `/api/companies` | List companies |
+| `GET` | `/api/questions` | Questions (`?company_id=`, `preview=true`) |
+| `GET` | `/api/questions/mixed` | Random multi-company set |
+| `POST` | `/api/evaluate` | ML answer scoring |
+| `POST` | `/api/progress` | Save practice session |
+| `GET` | `/api/progress/stats` | Dashboard statistics |
+
+All responses are **JSON**. Errors return `{ "error": "..." }` with appropriate HTTP status codes.
+
+---
+
+## Installation
+
+### Prerequisites
+- Python 3.11+
+- MongoDB Atlas cluster
+- Git
+
+### 1. Clone & install
+
+```bash
+git clone https://github.com/divyanallamolu/prepzo.ai.git
+cd prepzo.ai
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate       # macOS/Linux
+pip install -r requirements.txt
+```
+
+### 2. Environment
+
+```bash
+cp .env.example backend/.env
+# Edit backend/.env with your Atlas URI and secrets
+```
+
+### 3. Seed database
+
+```bash
+cd database
+python seed_data.py
+python generate_question_bank.py
+python seed_questions.py --force
+```
+
+### 4. Run locally
 
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-cd ..\database
-python generate_question_bank.py   # builds data/interview_questions.json
-python seed_data.py                # admin + 20 companies
-python seed_questions.py --force   # 500 questions (25 per company)
-cd ..\backend
 python app.py
 ```
 
-Without MongoDB, Flask uses in-memory DB and auto-loads all 500 questions on startup.
+Open **http://127.0.0.1:5000** — API and frontend served together.
 
-Open http://127.0.0.1:5000 — or run `run.bat` on Windows.
+---
 
-| Page | URL |
-|------|-----|
-| Landing | `/` |
-| Auth | `/auth.html` |
-| Dashboard | `/dashboard.html` |
-| Admin | `/admin/login.html` |
+## Deployment
 
-Admin (after seed): `admin@prepzo.ai` / `Admin@Prepzo2026`
+### Vercel
 
-## Vercel deployment
+1. Import the GitHub repo in [Vercel](https://vercel.com).
+2. **Root directory:** repository root (where `vercel.json` lives).
+3. Add environment variables:
 
-**Root Directory:** project root (`Perpzo.ai` folder with `vercel.json`)
+| Variable | Required |
+|----------|----------|
+| `MONGO_URI` | Yes — `mongodb+srv://.../prepzo?...` |
+| `JWT_SECRET_KEY` | Yes |
+| `FLASK_SECRET_KEY` | Yes |
 
-**Env vars:** `MONGO_URI`, `JWT_SECRET_KEY`, `FLASK_SECRET_KEY`
-
-- Static site from `frontend/`
-- APIs via `api/index.py` → Flask
-
-```bash
-vercel
-```
-
-Note: logo file uploads need cloud storage on Vercel (local disk is ephemeral).
-
-## Admin panel
-
-`/admin/` — manage companies (CRUD + logos), questions (CRUD + search/filter), bulk CSV/JSON upload, users, feedback, analytics.
-
-CSV columns: `company_name,difficulty,category,question,answer,explanation`
-
-## ML evaluation
-
-See `ml/README.md`. Flow: interview room → `POST /api/evaluate` → `ml/evaluator.py` (TF-IDF + communication score). Overall = 60% content + 40% communication.
-
-## Structure
+4. Deploy. Verify:
 
 ```
-frontend/     UI
-backend/      Flask API
-api/          Vercel serverless
-ml/           NLP scorer
-database/     seed script
-vercel.json   deploy config
+https://your-app.vercel.app/api/health
 ```
 
-MIT License
+### Atlas checklist
+- Database user with read/write access
+- Network access: allow `0.0.0.0/0` (or Vercel IPs)
+- URI includes database name: `/prepzo`
+
+---
+
+## Environment variables
+
+See [`.env.example`](.env.example) for the full template.
+
+```env
+MONGO_URI=mongodb+srv://USER:PASS@cluster.mongodb.net/prepzo?retryWrites=true&w=majority
+JWT_SECRET_KEY=your-long-random-secret
+FLASK_SECRET_KEY=your-flask-secret
+```
+
+---
+
+## Screenshots
+
+| Landing | Dashboard | Interview room |
+|---------|-----------|----------------|
+| Premium dark hero, company grid | Stats, company picker, mixed mode | Timers, AI evaluate, score bars |
+
+_Add screenshots to `docs/screenshots/` and embed here for your portfolio._
+
+---
+
+## Future scope
+
+- [ ] OAuth (Google / LinkedIn)
+- [ ] Real-time interview coach (streaming hints)
+- [ ] Resume-aware question generation
+- [ ] Team / campus recruiter dashboards
+- [ ] Mobile PWA install
+- [ ] Cloud logo storage (S3 / Cloudinary)
+
+---
+
+## License
+
+MIT © Prepzo
+
+---
+
+<div align="center">
+
+**Built for serious interview preparation — portfolio-ready, production-deployed.**
+
+[⭐ Star this repo](https://github.com/divyanallamolu/prepzo.ai) if Prepzo helps your prep journey.
+
+</div>

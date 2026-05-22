@@ -1,41 +1,27 @@
 # Python
-venv/
-backend/venv/
-api/_vendor/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.pytest_cache/
-.mypy_cache/
+.venv/
+venv/
+backend/venv/
 
-# Environment & secrets
+# Environment
 .env
 .env.local
 .env.*.local
 
-# Uploads (runtime files)
+# Uploads
 backend/uploads/
 
-# IDE & OS
+# IDE / OS
 .idea/
 .vscode/
-*.swp
 .DS_Store
 Thumbs.db
 
 # Logs
 *.log
 
-# Vercel build artifacts
-api/_backend/
-api/ml/
-api/database/
-frontend/api/_backend/
-frontend/api/ml/
-frontend/api/database/
-
 # Vercel
 .vercel
-
-# Node (not used, but ignore if added)
-node_modules/

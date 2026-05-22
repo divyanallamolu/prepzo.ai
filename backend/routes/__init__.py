@@ -1,18 +1,16 @@
-from routes.debug import debug_bp
-from routes.health import health_bp
 from routes.analytics import analytics_bp
 from routes.auth import auth_bp
 from routes.companies import companies_bp
 from routes.evaluate import evaluate_bp
 from routes.feedback import feedback_bp
+from routes.health import health_bp
 from routes.progress import progress_bp
 from routes.questions import questions_bp
 from routes.timer_settings import timer_bp
 from routes.users import users_bp
 
-ALL_BLUEPRINTS = (
+BLUEPRINTS = (
     health_bp,
-    debug_bp,
     auth_bp,
     companies_bp,
     questions_bp,
@@ -26,5 +24,5 @@ ALL_BLUEPRINTS = (
 
 
 def register_blueprints(app):
-    for blueprint in ALL_BLUEPRINTS:
-        app.register_blueprint(blueprint)
+    for bp in BLUEPRINTS:
+        app.register_blueprint(bp)
