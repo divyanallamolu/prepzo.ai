@@ -24,6 +24,9 @@
   }
 
   const API_BASE = getApiBase();
+  const API_BASE_URL = API_BASE;
+  console.log('API BASE:', API_BASE_URL);
+
   const DEBUG = localStorage.getItem('prepzo_debug') === '1' || getApiBase().includes('localhost');
 
   function log(...args) {
@@ -42,6 +45,7 @@
 
   var Api = {
     baseUrl: API_BASE,
+    baseUrlFull: API_BASE_URL,
 
     async health() {
       return this.request('/health');
