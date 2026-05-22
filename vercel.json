@@ -1,26 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" },
-    { "src": "frontend/**", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "api/index.py" },
-    { "src": "/uploads/(.*)", "dest": "api/index.py" },
-    { "src": "/auth", "dest": "/frontend/auth.html" },
-    { "src": "/auth/login", "dest": "/frontend/auth.html" },
-    { "src": "/auth/register", "dest": "/frontend/auth.html" },
-    { "src": "/login", "dest": "/frontend/auth.html" },
-    { "src": "/register", "dest": "/frontend/auth.html" },
-    { "src": "/dashboard", "dest": "/frontend/dashboard.html" },
-    { "src": "/interview", "dest": "/frontend/interview.html" },
-    { "src": "/results", "dest": "/frontend/results.html" },
-    { "src": "/admin/login", "dest": "/frontend/admin/login.html" },
-    { "src": "/admin", "dest": "/frontend/admin/index.html" },
-    { "src": "/admin/", "dest": "/frontend/admin/index.html" },
-    { "src": "/(.*)", "dest": "/frontend/$1" }
-  ],
+  "installCommand": "pip install -r requirements.txt",
+  "outputDirectory": "frontend",
+  "functions": {
+    "api/index.py": {
+      "memory": 1024,
+      "maxDuration": 30,
+      "includeFiles": "backend/**"
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",
@@ -30,5 +19,20 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/uploads/(.*)", "destination": "/api/index" },
+    { "source": "/auth", "destination": "/auth.html" },
+    { "source": "/auth/login", "destination": "/auth.html" },
+    { "source": "/auth/register", "destination": "/auth.html?mode=register" },
+    { "source": "/login", "destination": "/auth.html" },
+    { "source": "/register", "destination": "/auth.html?mode=register" },
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/interview", "destination": "/interview.html" },
+    { "source": "/results", "destination": "/results.html" },
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/", "destination": "/admin/index.html" },
+    { "source": "/admin/login", "destination": "/admin/login.html" }
   ]
 }
